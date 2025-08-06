@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Custom configuration background -->
+  <circle cx="32" cy="32" r="30" fill="#6c757d"/>
+  
+  <!-- Settings gear icon -->
+  <g transform="translate(32, 32)">
+    <circle r="8" fill="white"/>
+    <circle r="4" fill="#6c757d"/>
+    
+    <!-- Gear teeth -->
+    <rect x="-2" y="-12" width="4" height="4" fill="white"/>
+    <rect x="-2" y="8" width="4" height="4" fill="white"/>
+    <rect x="8" y="-2" width="4" height="4" fill="white"/>
+    <rect x="-12" y="-2" width="4" height="4" fill="white"/>
+    
+    <rect x="-8" y="-8" width="4" height="3" fill="white" transform="rotate(45)"/>
+    <rect x="4" y="-8" width="4" height="3" fill="white" transform="rotate(45)"/>
+    <rect x="-8" y="5" width="4" height="3" fill="white" transform="rotate(45)"/>
+    <rect x="4" y="5" width="4" height="3" fill="white" transform="rotate(45)"/>
+  </g>
+  
+  <!-- Custom text -->
+  <text x="32" y="52" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" font-weight="bold" fill="white">
+    Custom
+  </text>
+</svg>

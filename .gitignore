@@ -1,0 +1,70 @@
+/.phpunit.cache
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+.env
+.env.backup
+.env.production
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+/.fleet
+/.idea
+/.vscode
+
+# Fichiers temporaires et scripts de debug
+/install.php
+/debug*.php
+/fix*.php
+/test*.php
+/check*.php
+/generate*.php
+/enable*.php
+/deep*.php
+/manual-install.sh
+/create-archive.sh
+/*.tar.gz
+/.htaccess.*
+/public/debug*.php
+/public/test*.php
+/public/route*.php
+
+# Scripts de déploiement avec credentials
+/deploy.sh
+/deploy-watch.sh
+/Makefile
+
+# Scripts de debug/test Microsoft
+/scripts/debug_*.php
+/scripts/test_*.php
+/scripts/decode_*.php
+/scripts/fix_*.php
+/scripts/refresh_*.php
+/scripts/check_*.php
+/scripts/apply_*.sh
+
+# Fichiers de logs
+/storage/logs/*.log
+*.log
+
+# Fichiers de base de données
+/database/schema/*.old*
+*.sql
+*.sql.bak
+
+# Fichiers de cache
+/bootstrap/cache/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+
+# Fichiers IDE
+.DS_Store
+Thumbs.db
+

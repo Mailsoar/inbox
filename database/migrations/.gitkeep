@@ -1,0 +1,3 @@
+# Keep this directory for future migrations
+# Schema is now managed via database/schema/mysql-schema.sql
+# Use: php artisan schema:load to restore the database

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+  
+  <!-- Email icon -->
+  <rect x="16" y="24" width="32" height="20" rx="2" fill="#6c757d" stroke="#495057" stroke-width="1"/>
+  <path d="M16 26 L32 36 L48 26" stroke="#495057" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Generic server icon in corner -->
+  <rect x="44" y="12" width="8" height="12" rx="1" fill="#dc3545"/>
+  <rect x="46" y="14" width="4" height="1" fill="white"/>
+  <rect x="46" y="16" width="4" height="1" fill="white"/>
+  <rect x="46" y="18" width="4" height="1" fill="white"/>
+</svg>
