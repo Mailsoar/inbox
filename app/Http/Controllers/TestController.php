@@ -82,11 +82,19 @@ class TestController extends Controller
     public function store(Request $request)
     {
         if ($request->ajax()) {
+            Log::info('[TEST_CREATE] Store method started', [
+                'email' => $request->input('visitor_email'),
+                'ip' => $request->ip(),
+                'time' => now()->format('Y-m-d H:i:s')
+            ]);
+            
             // Vérifier reCAPTCHA en premier
             $recaptchaToken = $request->input('g-recaptcha-response');
             if ($recaptchaToken) {
+                Log::info('[TEST_CREATE] Verifying reCAPTCHA');
                 $recaptchaResponse = $this->verifyRecaptcha($recaptchaToken);
                 if (!$recaptchaResponse['success'] || ($recaptchaResponse['score'] ?? 0) < 0.5) {
+                    Log::warning('[TEST_CREATE] reCAPTCHA failed');
                     return response()->json([
                         'success' => false,
                         'message' => 'Verification failed. Please try again.',
@@ -201,9 +209,11 @@ class TestController extends Controller
             }
             
             try {
+                Log::info('[TEST_CREATE] Checking email accounts');
                 $accountCount = EmailAccount::where('is_active', true)->count();
                 
                 if ($accountCount === 0) {
+                    Log::error('[TEST_CREATE] No accounts available');
                     return response()->json([
                         'success' => false,
                         'message' => 'No email accounts available for testing. Please contact support.',
@@ -211,12 +221,14 @@ class TestController extends Controller
                     ], 200);
                 }
                 
+                Log::info('[TEST_CREATE] Creating test', ['accounts' => $accountCount]);
                 $test = $this->testService->createTest([
                     'visitor_email' => $email,
                     'visitor_ip' => $ip,
                     'audience_type' => $audienceType,
                     'test_size' => min(config('mailsoar.default_test_size', 25), $accountCount),
                 ]);
+                Log::info('[TEST_CREATE] Test created successfully', ['test_id' => $test->unique_id]);
                 
                 $seedEmails = $test->emailAccounts->map(function ($account) {
                     return [
@@ -234,10 +246,12 @@ class TestController extends Controller
                     'message' => 'Test created successfully!'
                 ]);
             } catch (\Exception $e) {
-                \Log::error('Test creation failed', [
+                Log::error('[TEST_CREATE] Test creation failed', [
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
-                    'email' => $request->email
+                    'email' => $email,
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
                 ]);
                 
                 return response()->json([

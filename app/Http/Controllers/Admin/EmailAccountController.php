@@ -686,16 +686,20 @@ class EmailAccountController extends Controller
             }
             
             $sortOrder = 0;
-            foreach ($request->folder_mappings as $mapping) {
-                EmailFolderMapping::create([
-                    'email_account_id' => $emailAccount->id,
-                    'email_provider_id' => $emailProviderId,
-                    'folder_type' => $mapping['folder_type'],
-                    'folder_name' => $mapping['folder_name'],
-                    'display_name' => $mapping['display_name'] ?? null,
-                    'is_additional_inbox' => $mapping['is_additional_inbox'] ?? false,
-                    'sort_order' => $sortOrder++,
-                ]);
+            if ($request->has('folder_mappings')) {
+                foreach ($request->folder_mappings as $mapping) {
+                    if (!empty($mapping['folder_type']) && !empty($mapping['folder_name'])) {
+                        EmailFolderMapping::create([
+                            'email_account_id' => $emailAccount->id,
+                            'email_provider_id' => $emailProviderId,
+                            'folder_type' => $mapping['folder_type'],
+                            'folder_name' => $mapping['folder_name'],
+                            'display_name' => $mapping['display_name'] ?? null,
+                            'is_additional_inbox' => $mapping['is_additional_inbox'] ?? false,
+                            'sort_order' => $sortOrder++,
+                        ]);
+                    }
+                }
             }
             
             // Activate the account

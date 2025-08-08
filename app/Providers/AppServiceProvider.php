@@ -22,9 +22,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Force HTTPS in production
+        // Force HTTPS in production with better proxy detection
         if (config('app.env') === 'production') {
-            \URL::forceScheme('https');
+            // Check if request is already secure or comes through a proxy
+            if (request()->header('X-Forwarded-Proto') === 'https' || request()->secure()) {
+                \URL::forceScheme('https');
+            } elseif (!request()->is('test') && !request()->is('test/*')) {
+                // Only force HTTPS for non-POST routes to avoid redirect loops
+                \URL::forceScheme('https');
+            }
         }
 
         // Use Bootstrap 5 for pagination

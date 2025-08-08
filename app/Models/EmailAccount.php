@@ -164,8 +164,6 @@ class EmailAccount extends Model
         return $this->folderMappings()->where('is_additional_inbox', true)->get();
     }
     
-    // Relation supprimée - utiliser emailProvider() à la place
-    
     /**
      * Get display name for the provider
      */

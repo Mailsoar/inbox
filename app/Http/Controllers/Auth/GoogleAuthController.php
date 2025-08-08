@@ -22,19 +22,22 @@ class GoogleAuthController extends Controller
         try {
             $googleUser = Socialite::driver('google')->user();
             
-            // Vérifier si l'email est autorisé
-            $allowedEmails = explode(',', config('services.google.allowed_emails', ''));
-            $allowedEmails = array_map('trim', $allowedEmails);
+            // Vérifier si l'email est autorisé par domaine
+            $allowedDomains = explode(',', config('services.google.allowed_domains', ''));
+            $allowedDomains = array_map('trim', $allowedDomains);
+            
+            $emailDomain = substr(strrchr($googleUser->getEmail(), "@"), 1);
             
             // Debug : log des informations
             \Log::info('Google Auth Attempt', [
                 'email' => $googleUser->getEmail(),
-                'allowed_emails' => $allowedEmails,
-                'is_allowed' => in_array($googleUser->getEmail(), $allowedEmails)
+                'email_domain' => $emailDomain,
+                'allowed_domains' => $allowedDomains,
+                'is_allowed' => in_array($emailDomain, $allowedDomains)
             ]);
             
-            if (!in_array($googleUser->getEmail(), $allowedEmails)) {
-                return redirect()->route('home')->with('error', 'Accès non autorisé. Votre email (' . $googleUser->getEmail() . ') n\'est pas dans la liste des administrateurs autorisés.');
+            if (!in_array($emailDomain, $allowedDomains)) {
+                return redirect()->route('home')->with('error', 'Accès non autorisé. Votre domaine email (@' . $emailDomain . ') n\'est pas autorisé.');
             }
             
             // Créer ou mettre à jour l'utilisateur admin
@@ -58,8 +61,16 @@ class GoogleAuthController extends Controller
                 ]
             );
             
-            if (!$adminUser->isAllowedEmail()) {
-                return redirect()->route('home')->with('error', 'Accès non autorisé.');
+            // Auto-assign super_admin role to system-defined super admins
+            if ($adminUser->isSystemSuperAdmin() && $adminUser->role !== 'super_admin') {
+                $adminUser->update(['role' => 'super_admin']);
+                \Log::info('System super admin role assigned', ['email' => $adminUser->email]);
+            }
+            
+            // Set default role for new users from allowed domain
+            if (!$adminUser->role) {
+                $adminUser->update(['role' => 'viewer']);
+                \Log::info('Default viewer role assigned to new user', ['email' => $adminUser->email]);
             }
             
             $adminUser->updateLastLogin();

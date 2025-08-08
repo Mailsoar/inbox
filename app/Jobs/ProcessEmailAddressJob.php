@@ -301,33 +301,59 @@ class ProcessEmailAddressJob implements ShouldQueue, ShouldBeUnique
                 ]);
 
                 // Update test counts
+                Log::info('[ProcessEmailAddress] Updating test progress', [
+                    'test_id' => $test->unique_id,
+                    'account' => $this->emailAccount->email,
+                    'current_received' => $test->received_emails,
+                    'will_be' => $test->received_emails + 1
+                ]);
+                
                 $test->increment('received_emails');
-
+                
                 // Update pivot table
-                DB::table('test_email_accounts')
+                $updated = DB::table('test_email_accounts')
                     ->where('test_id', $test->id)
                     ->where('email_account_id', $this->emailAccount->id)
                     ->update([
                         'email_received' => true,
                         'received_at' => now()
                     ]);
+                    
+                Log::info('[ProcessEmailAddress] Marked email as received in pivot', [
+                    'test_id' => $test->unique_id,
+                    'account' => $this->emailAccount->email,
+                    'rows_updated' => $updated
+                ]);
 
+                // Reload test to get fresh count
+                $test->refresh();
+                
                 // Check if test is complete
                 if ($test->received_emails >= $test->expected_emails) {
                     $test->update(['status' => 'completed']);
                     
-                    Log::info('[ProcessEmailAddress] Test completed', [
+                    Log::info('[ProcessEmailAddress] ✅ TEST COMPLETED', [
                         'account' => $this->emailAccount->email,
                         'test_id' => $test->unique_id,
                         'received' => $test->received_emails,
-                        'expected' => $test->expected_emails
+                        'expected' => $test->expected_emails,
+                        'status' => 'completed'
+                    ]);
+                } else {
+                    Log::info('[ProcessEmailAddress] Test still in progress', [
+                        'test_id' => $test->unique_id,
+                        'received' => $test->received_emails,
+                        'expected' => $test->expected_emails,
+                        'remaining' => $test->expected_emails - $test->received_emails
                     ]);
                 }
 
-                Log::info('[ProcessEmailAddress] Email processed successfully', [
+                Log::info('[ProcessEmailAddress] ✉️ Email processed successfully', [
                     'account' => $this->emailAccount->email,
                     'test_id' => $test->unique_id,
-                    'placement' => $emailData['placement'] ?? 'unknown'
+                    'placement' => $emailData['placement'] ?? 'unknown',
+                    'folder' => $emailData['folder'] ?? 'INBOX',
+                    'test_progress' => "{$test->received_emails}/{$test->expected_emails}"
                 ]);
 
             } catch (\Exception $e) {

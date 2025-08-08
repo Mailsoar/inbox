@@ -273,6 +273,14 @@
                             Logs Système
                         </a>
                         
+                        @if(auth('admin')->user() && auth('admin')->user()->isSuperAdmin())
+                        <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" 
+                           href="{{ route('admin.users.index') }}">
+                            <i class="fas fa-users-cog"></i>
+                            Admin Users
+                        </a>
+                        @endif
+                        
                         <hr class="my-3" style="border-color: #334155;">
                         
                         <a class="nav-link" href="{{ route('home') }}" target="_blank">
@@ -331,6 +339,15 @@
                                             {{ auth('admin')->user()->email ?? '' }}
                                         </span>
                                     </li>
+                                    @if(auth('admin')->user())
+                                    <li>
+                                        <span class="dropdown-item-text">
+                                            <span class="badge bg-{{ auth('admin')->user()->role === 'super_admin' ? 'danger' : (auth('admin')->user()->role === 'admin' ? 'warning' : 'secondary') }}">
+                                                {{ auth('admin')->user()->getRoleDisplayName() }}
+                                            </span>
+                                        </span>
+                                    </li>
+                                    @endif
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a class="dropdown-item text-danger" href="{{ route('admin.logout') }}"

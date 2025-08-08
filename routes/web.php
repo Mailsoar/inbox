@@ -163,10 +163,26 @@ Route::prefix('admin')->middleware('admin.auth')->group(function () {
     // Dashboard
     Route::get('/', [App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('admin.dashboard');
     
-    // Email Accounts Management
+    // Admin Users Management (Super Admin only)
+    Route::get('users', [App\Http\Controllers\Admin\AdminUserController::class, 'index'])
+        ->name('admin.users.index');
+    Route::get('users/{admin}/edit', [App\Http\Controllers\Admin\AdminUserController::class, 'edit'])
+        ->name('admin.users.edit');
+    Route::put('users/{admin}', [App\Http\Controllers\Admin\AdminUserController::class, 'update'])
+        ->name('admin.users.update');
+    Route::post('users/{admin}/toggle-active', [App\Http\Controllers\Admin\AdminUserController::class, 'toggleActive'])
+        ->name('admin.users.toggle-active');
+    
+    // Email Accounts Management (Admin & Super Admin)
     Route::resource('email-accounts', App\Http\Controllers\Admin\EmailAccountController::class)
         ->names('admin.email-accounts')
-        ->except(['show']);
+        ->except(['show', 'destroy'])
+        ->middleware('permission:manage_email_accounts');
+    
+    // Delete email account (Super Admin only)
+    Route::delete('email-accounts/{emailAccount}', [App\Http\Controllers\Admin\EmailAccountController::class, 'destroy'])
+        ->name('admin.email-accounts.destroy')
+        ->middleware('permission:delete_data');
     
     // Test connection
     Route::post('email-accounts/{emailAccount}/test', [App\Http\Controllers\Admin\EmailAccountController::class, 'testConnection'])
@@ -214,11 +230,17 @@ Route::prefix('admin')->middleware('admin.auth')->group(function () {
     Route::post('antispam-systems/test-patterns', [App\Http\Controllers\Admin\AntispamSystemController::class, 'testPatterns'])
         ->name('admin.antispam-systems.test-patterns');
     
-    // Unified Providers Management (remplace imap-providers et email-providers)
+    // Unified Providers Management (Admin & Super Admin only)
     Route::resource('providers', App\Http\Controllers\Admin\ProviderController::class)
-        ->names('admin.providers');
+        ->names('admin.providers')
+        ->except(['destroy'])
+        ->middleware('permission:manage_providers');
+    Route::delete('providers/{provider}', [App\Http\Controllers\Admin\ProviderController::class, 'destroy'])
+        ->name('admin.providers.destroy')
+        ->middleware('permission:delete_data');
     Route::post('providers/{provider}/test', [App\Http\Controllers\Admin\ProviderController::class, 'test'])
-        ->name('admin.providers.test');
+        ->name('admin.providers.test')
+        ->middleware('permission:manage_providers');
     
     // Routes de compatibilité (redirection vers les nouvelles routes)
     Route::get('imap-providers', function() {
@@ -229,20 +251,44 @@ Route::prefix('admin')->middleware('admin.auth')->group(function () {
     });
     
     // Tests Management
-    Route::get('tests', [App\Http\Controllers\Admin\TestAdminController::class, 'index'])->name('admin.tests.index');
-    Route::get('tests/{test}', [App\Http\Controllers\Admin\TestAdminController::class, 'show'])->name('admin.tests.show');
-    Route::delete('tests/{test}', [App\Http\Controllers\Admin\TestAdminController::class, 'destroy'])->name('admin.tests.destroy');
-    Route::patch('tests/{test}/force-recheck', [App\Http\Controllers\Admin\TestAdminController::class, 'forceRecheck'])->name('admin.tests.force-recheck');
-    Route::patch('tests/{test}/cancel', [App\Http\Controllers\Admin\TestAdminController::class, 'cancel'])->name('admin.tests.cancel');
+    Route::get('tests', [App\Http\Controllers\Admin\TestAdminController::class, 'index'])
+        ->name('admin.tests.index')
+        ->middleware('permission:view_all');
+    Route::get('tests/{test}', [App\Http\Controllers\Admin\TestAdminController::class, 'show'])
+        ->name('admin.tests.show')
+        ->middleware('permission:view_all');
+    Route::delete('tests/{test}', [App\Http\Controllers\Admin\TestAdminController::class, 'destroy'])
+        ->name('admin.tests.destroy')
+        ->middleware('permission:delete_data');
+    Route::patch('tests/{test}/force-recheck', [App\Http\Controllers\Admin\TestAdminController::class, 'forceRecheck'])
+        ->name('admin.tests.force-recheck')
+        ->middleware('permission:manage_tests');
+    Route::patch('tests/{test}/cancel', [App\Http\Controllers\Admin\TestAdminController::class, 'cancel'])
+        ->name('admin.tests.cancel')
+        ->middleware('permission:manage_tests');
     
-    // Queue Management
-    Route::get('queue', [App\Http\Controllers\Admin\QueueStatusController::class, 'index'])->name('admin.queue.index');
-    Route::post('queue/process', [App\Http\Controllers\Admin\QueueStatusController::class, 'process'])->name('admin.queue.process');
-    Route::post('queue/retry/{id}', [App\Http\Controllers\Admin\QueueStatusController::class, 'retry'])->name('admin.queue.retry');
-    Route::delete('queue/cancel/{id}', [App\Http\Controllers\Admin\QueueStatusController::class, 'cancel'])->name('admin.queue.cancel');
-    Route::delete('queue/failed/{id}', [App\Http\Controllers\Admin\QueueStatusController::class, 'deleteFailed'])->name('admin.queue.delete-failed');
-    Route::delete('queue/clear/{queue}', [App\Http\Controllers\Admin\QueueStatusController::class, 'clearQueue'])->name('admin.queue.clear');
-    Route::delete('queue/clear-failed', [App\Http\Controllers\Admin\QueueStatusController::class, 'clearFailed'])->name('admin.queue.clear-failed');
+    // Queue Management (Admin & Super Admin only)
+    Route::get('queue', [App\Http\Controllers\Admin\QueueStatusController::class, 'index'])
+        ->name('admin.queue.index')
+        ->middleware('permission:view_logs');
+    Route::post('queue/process', [App\Http\Controllers\Admin\QueueStatusController::class, 'process'])
+        ->name('admin.queue.process')
+        ->middleware('permission:run_commands');
+    Route::post('queue/retry/{id}', [App\Http\Controllers\Admin\QueueStatusController::class, 'retry'])
+        ->name('admin.queue.retry')
+        ->middleware('permission:manage_tests');
+    Route::delete('queue/cancel/{id}', [App\Http\Controllers\Admin\QueueStatusController::class, 'cancel'])
+        ->name('admin.queue.cancel')
+        ->middleware('permission:manage_tests');
+    Route::delete('queue/failed/{id}', [App\Http\Controllers\Admin\QueueStatusController::class, 'deleteFailed'])
+        ->name('admin.queue.delete-failed')
+        ->middleware('permission:delete_data');
+    Route::delete('queue/clear/{queue}', [App\Http\Controllers\Admin\QueueStatusController::class, 'clearQueue'])
+        ->name('admin.queue.clear')
+        ->middleware('permission:delete_data');
+    Route::delete('queue/clear-failed', [App\Http\Controllers\Admin\QueueStatusController::class, 'clearFailed'])
+        ->name('admin.queue.clear-failed')
+        ->middleware('permission:delete_data');
     
     // Filter Rules Management
     Route::resource('filter-rules', App\Http\Controllers\Admin\FilterRuleController::class)
@@ -256,11 +302,13 @@ Route::prefix('admin')->middleware('admin.auth')->group(function () {
     Route::get('emails/{receivedEmail}', [App\Http\Controllers\Admin\TestAdminController::class, 'emailDetail'])
         ->name('admin.emails.show');
     
-    // System Logs
+    // System Logs (Admin & Super Admin only)
     Route::get('logs', [App\Http\Controllers\Admin\LogsController::class, 'index'])
-        ->name('admin.logs.index');
+        ->name('admin.logs.index')
+        ->middleware('permission:view_logs');
     Route::post('logs/clear', [App\Http\Controllers\Admin\LogsController::class, 'clear'])
-        ->name('admin.logs.clear');
+        ->name('admin.logs.clear')
+        ->middleware('permission:system_config');
 });
 
 /*
