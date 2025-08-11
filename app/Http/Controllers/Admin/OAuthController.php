@@ -191,7 +191,7 @@ class OAuthController extends Controller
                 'email'
             ])
             ->with([
-                'prompt' => 'consent',  // Force le consentement pour s'assurer d'avoir tous les scopes
+                'prompt' => 'select_account',  // Force le choix du compte
                 'access_type' => 'offline',
                 'login_hint' => isset($account) ? $account->email : null
             ])

@@ -225,12 +225,15 @@
                             Dashboard
                         </a>
                         
+                        @if(auth('admin')->user() && auth('admin')->user()->hasPermission('manage_tests'))
                         <a class="nav-link {{ request()->routeIs('admin.tests.*') ? 'active' : '' }}" 
                            href="{{ route('admin.tests.index') }}">
                             <i class="fas fa-flask"></i>
                             Tests
                         </a>
+                        @endif
                         
+                        @if(auth('admin')->user() && auth('admin')->user()->hasPermission('view_logs'))
                         <a class="nav-link {{ request()->routeIs('admin.queue.*') ? 'active' : '' }}" 
                            href="{{ route('admin.queue.index') }}">
                             <i class="fas fa-tasks"></i>
@@ -242,36 +245,47 @@
                                 <span class="badge bg-warning ms-1">{{ $pendingCount }}</span>
                             @endif
                         </a>
+                        @endif
                         
+                        @if(auth('admin')->user() && auth('admin')->user()->hasPermission('manage_email_accounts'))
                         <a class="nav-link {{ request()->routeIs('admin.email-accounts.*') ? 'active' : '' }}" 
                            href="{{ route('admin.email-accounts.index') }}">
                             <i class="fas fa-at"></i>
                             Comptes Email
                         </a>
+                        @endif
                         
+                        @if(auth('admin')->user() && auth('admin')->user()->hasPermission('manage_email_accounts'))
                         <a class="nav-link {{ request()->routeIs('admin.antispam-systems.*') ? 'active' : '' }}" 
                            href="{{ route('admin.antispam-systems.index') }}">
                             <i class="fas fa-shield-alt"></i>
                             Systèmes Anti-spam
                         </a>
+                        @endif
                         
+                        @if(auth('admin')->user() && auth('admin')->user()->hasPermission('manage_providers'))
                         <a class="nav-link {{ request()->routeIs('admin.providers.*') ? 'active' : '' }}" 
                            href="{{ route('admin.providers.index') }}">
                             <i class="fas fa-server"></i>
                             Fournisseurs Email
                         </a>
+                        @endif
                         
+                        @if(auth('admin')->user() && auth('admin')->user()->hasPermission('manage_providers'))
                         <a class="nav-link {{ request()->routeIs('admin.filter-rules.*') ? 'active' : '' }}" 
                            href="{{ route('admin.filter-rules.index') }}">
                             <i class="fas fa-filter"></i>
                             Règles de filtrage
                         </a>
+                        @endif
                         
+                        @if(auth('admin')->user() && auth('admin')->user()->hasPermission('view_logs'))
                         <a class="nav-link {{ request()->routeIs('admin.logs.*') ? 'active' : '' }}" 
                            href="{{ route('admin.logs.index') }}">
                             <i class="fas fa-file-alt"></i>
                             Logs Système
                         </a>
+                        @endif
                         
                         @if(auth('admin')->user() && auth('admin')->user()->isSuperAdmin())
                         <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" 

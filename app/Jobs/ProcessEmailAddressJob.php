@@ -209,16 +209,19 @@ class ProcessEmailAddressJob implements ShouldQueue, ShouldBeUnique
             return true;
         }
 
-        // Progressive intervals based on test age
-        if ($ageMinutes <= 5) {
-            // 0-5 minutes: check every minute
+        // Aggressive checking until timeout (30 minutes)
+        if ($ageMinutes <= 10) {
+            // 0-10 minutes: check every minute (emails usually arrive quickly)
             return $minutesSinceLastCheck >= 1;
-        } elseif ($ageMinutes <= 15) {
-            // 5-15 minutes: check every 5 minutes
-            return $minutesSinceLastCheck >= 5;
+        } elseif ($ageMinutes <= 20) {
+            // 10-20 minutes: check every 2 minutes
+            return $minutesSinceLastCheck >= 2;
+        } elseif ($ageMinutes <= 30) {
+            // 20-30 minutes: check every 3 minutes (last chance before timeout)
+            return $minutesSinceLastCheck >= 3;
         } else {
-            // Older than 15 minutes: check every 15 minutes until timeout
-            return $minutesSinceLastCheck >= 15;
+            // Test will timeout at 30 minutes, no need to check
+            return false;
         }
     }
 

@@ -131,6 +131,7 @@ class AdminUser extends Authenticatable
             ],
             'viewer' => [
                 'view_all',
+                'manage_tests',
             ],
             default => [],
         };
