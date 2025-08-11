@@ -43,7 +43,8 @@
       "Bash(./test_force_recheck.sh:*)",
       "Bash(git add:*)",
       "Bash(/usr/local/bin/php artisan tinker:*)",
-      "Bash(./check_cron_remote.sh:*)"
+      "Bash(./check_cron_remote.sh:*)",
+      "Bash(./download_mailsoar_assets.sh:*)"
     ],
     "deny": []
   }

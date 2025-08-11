@@ -1,5 +1,21 @@
 @extends('layouts.app')
 
+@section('title')
+@if(app()->getLocale() === 'fr')
+Test Gratuit Délivrabilité Email – Inbox by MailSoar
+@else
+Free email inbox placement test - Inbox By MailSoar
+@endif
+@endsection
+
+@section('meta')
+@if(app()->getLocale() === 'fr')
+<meta name="description" content="Testez gratuitement la délivrabilité de vos emails. Vérifiez le placement dans la boîte de réception ou dans les spams, les protocoles SPF/DKIM/DMARC, la réputation IP et améliorez les performances de vos campagnes d'email marketing.">
+@else
+<meta name="description" content="Run a free email deliverability test. Check inbox vs spam placement, SPF/DKIM/DMARC, IP reputation, and boost your email deliverability campaign performance.">
+@endif
+@endsection
+
 @section('content')
 <div class="hero-section bg-primary text-white py-5">
     <div class="container">
@@ -20,7 +36,15 @@
             </div>
             <div class="col-lg-6">
                 <div class="text-center">
-                    <i class="fas fa-envelope-open-text" style="font-size: 200px; opacity: 0.3;"></i>
+                    @if(file_exists(public_path('images/spamourai.png')))
+                        <img src="/images/spamourai.png" alt="Spamourai - MailSoar Mascot" class="img-fluid" style="max-height: 400px;">
+                    @else
+                        <!-- Placeholder en attendant l'image Spamourai -->
+                        <div style="position: relative;">
+                            <i class="fas fa-shield-alt" style="font-size: 180px; color: var(--mailsoar-yellow); opacity: 0.8;"></i>
+                            <i class="fas fa-envelope" style="font-size: 100px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.9;"></i>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -131,7 +155,13 @@
 @push('styles')
 <style>
 .hero-section {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--mailsoar-blue) 0%, var(--mailsoar-blue-dark) 100%);
+}
+
+.btn-light:hover {
+    background-color: var(--mailsoar-yellow);
+    border-color: var(--mailsoar-yellow);
+    color: white;
 }
 </style>
 @endpush

@@ -6,6 +6,14 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Inbox by MailSoar')</title>
     
+    <!-- Meta tags for SEO -->
+    @yield('meta')
+    
+    <!-- Favicon -->
+    <link rel="icon" href="https://www.mailsoar.com/wp-content/uploads/2021/03/cropped-favicon-32x32-1-32x32.png" sizes="32x32" />
+    <link rel="icon" href="https://www.mailsoar.com/wp-content/uploads/2021/03/cropped-favicon-32x32-1-192x192.png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="https://www.mailsoar.com/wp-content/uploads/2021/03/cropped-favicon-32x32-1-180x180.png" />
+    
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
@@ -16,6 +24,48 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.5.0/css/flag-icon.min.css">
     
     <style>
+        :root {
+            --mailsoar-blue: #3D2F88;
+            --mailsoar-yellow: #F2A714;
+            --mailsoar-blue-dark: #2e2366;
+            --mailsoar-yellow-dark: #d89612;
+        }
+        
+        /* Override Bootstrap primary color */
+        .bg-primary {
+            background-color: var(--mailsoar-blue) !important;
+        }
+        
+        .btn-primary {
+            background-color: var(--mailsoar-blue);
+            border-color: var(--mailsoar-blue);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--mailsoar-blue-dark);
+            border-color: var(--mailsoar-blue-dark);
+        }
+        
+        .btn-warning {
+            background-color: var(--mailsoar-yellow);
+            border-color: var(--mailsoar-yellow);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: var(--mailsoar-yellow-dark);
+            border-color: var(--mailsoar-yellow-dark);
+            color: white;
+        }
+        
+        .text-primary {
+            color: var(--mailsoar-blue) !important;
+        }
+        
+        .text-warning {
+            color: var(--mailsoar-yellow) !important;
+        }
+        
         /* Conteneur pour les boutons flottants */
         .floating-buttons-container {
             position: fixed;
@@ -60,7 +110,12 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="{{ route('home') }}">
-                <i class="fas fa-envelope-open-text"></i> Inbox by MailSoar
+                @if(file_exists(public_path('images/inbox.png')))
+                    <img src="/images/inbox.png" alt="Inbox" style="height: 30px; margin-right: 8px;">
+                @else
+                    <i class="fas fa-envelope-open-text"></i>
+                @endif
+                Inbox by MailSoar
             </a>
             
             <!-- Sélecteur de langue -->
