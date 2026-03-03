@@ -6,6 +6,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Inbox by MailSoar')</title>
     <link rel="canonical" href="{{ url()->full() }}" />
+    <link rel="alternate" hreflang="fr" href="https://inbox.mailsoar.com/?lang=fr" />
+    <link rel="alternate" hreflang="en" href="https://inbox.mailsoar.com/?lang=en" />
+    <link rel="alternate" hreflang="x-default" href="https://inbox.mailsoar.com/?lang=fr" />
+
 
     <!-- Meta tags for SEO -->
     @yield('meta')
