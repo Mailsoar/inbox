@@ -1,2 +1,7 @@
 User-agent: *
-Disallow:
+Disallow: /admin/
+Disallow: /test/*/results
+Disallow: /test/*/instructions
+Disallow: /my-tests/
+
+Sitemap: https://inbox.mailsoar.com/sitemap.xml
