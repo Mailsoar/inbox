@@ -31,7 +31,7 @@ return [
         'tests_remaining_ip' => 'Tests restants pour cette IP',
         'how_it_works' => 'Comment ça marche ?',
         'how_it_works_step1_title' => 'Créez un test',
-        'how_it_works_step1_desc' => 'Sélectionnez les fournisseurs à analyser (Gmail, Outlook, Yahoo…) et le nombre d'adresses de test.',
+        'how_it_works_step1_desc' => 'Sélectionnez les fournisseurs à analyser (Gmail, Outlook, Yahoo…) et le nombre d\'adresses de test.',
         'how_it_works_step2_title' => 'Envoyez votre email',
         'how_it_works_step2_desc' => 'Envoyez votre campagne aux adresses de test fournies avec votre outil habituel.',
         'how_it_works_step3_title' => 'Analysez les résultats',
