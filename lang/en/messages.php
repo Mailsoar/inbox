@@ -2,7 +2,7 @@
 
 return [
     // Home page
-home' => [
+'home' => [
     'page_title' => 'Email Placement Test',
     'title' => 'Are your emails really reaching the inbox?',
     'subtitle' => 'Test your email deliverability with just one click.',
