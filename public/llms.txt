@@ -1,0 +1,13 @@
+# Inbox by MailSoar
+
+> Free email deliverability testing tool. Check if your emails land in the Inbox, Spam, or Promotions folder.
+
+## Pages
+- [Home (FR)](https://inbox.mailsoar.com/?lang=fr): Test de délivrabilité email gratuit
+- [Home (EN)](https://inbox.mailsoar.com/?lang=en): Free email deliverability test
+
+## About
+Inbox by MailSoar is a tool created by MailSoar, an international email deliverability consulting agency. It allows users to test email placement across major providers (Gmail, Outlook, Yahoo) and analyze SPF, DKIM, DMARC configuration.
+
+## Main site
+https://mailsoar.com
