@@ -26,10 +26,10 @@ Free email inbox placement test - Inbox By MailSoar
                     {{ __('messages.home.hero_description') }}
                 </p>
                 <div class="d-flex gap-3">
-                    <a href="{{ route('test.create') }}" class="btn btn-light btn-lg">
+                    <a href="{{ route('test.create') }}" class="btn btn-light btn-lg" style="white-space: nowrap;">
                         <i class="fas fa-flask"></i> {{ __('messages.home.start_free_test') }}
                     </a>
-                    <a href="#how-it-works" class="btn btn-outline-light btn-lg">
+                    <a href="#how-it-works" class="btn btn-outline-light btn-lg" style="white-space: nowrap;">
                         <i class="fas fa-info-circle"></i> {{ __('messages.home.how_it_works') }}
                     </a>
                 </div>
