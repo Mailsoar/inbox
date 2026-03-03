@@ -50,7 +50,7 @@ return [
         'features_title' => 'Fonctionnalités complètes',
         'feature_placement_title' => 'Placement réel de vos emails',
         'feature_placement_desc' => 'Inbox, Spam, Promotions, Updates : connaître précisément où vos emails arrivent.',
-        'feature_authentication_title' => 'Vérification complète SPF / DKIM / DMARC'
+        'feature_authentication_title' => 'Vérification complète SPF / DKIM / DMARC',
         'feature_authentication_desc' => 'Identifier les erreurs d\'authentification qui nuisent à votre réputation.',
         'feature_ip_title' => 'Contrôle IP & Blacklists',
         'feature_ip_desc' => 'Détection des listes noires et analyse de la réputation de vos IP.',
