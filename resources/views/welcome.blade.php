@@ -29,9 +29,6 @@ Free email inbox placement test - Inbox By MailSoar
                     <a href="{{ route('test.create') }}" class="btn btn-light btn-lg" style="white-space: nowrap;">
                         <i class="fas fa-flask"></i> {{ __('messages.home.start_free_test') }}
                     </a>
-                    <a href="#how-it-works" class="btn btn-outline-light btn-lg" style="white-space: nowrap;">
-                        <i class="fas fa-info-circle"></i> {{ __('messages.home.how_it_works') }}
-                    </a>
                 </div>
             </div>
             <div class="col-lg-6">
