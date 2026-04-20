@@ -3,7 +3,7 @@
 return [
     // Page d'accueil
     'home' => [
-        'page_title' => 'Test de placement d\'emails',
+        'page_title' => 'Test de placement des emails',
         'title' => 'Vos emails arrivent-ils vraiment en boîte de réception ?',
         'subtitle' => 'Testez la délivrabilité de vos emails, en un clic.',
         'hero_description' => 'Vérifiez instantanément si vos campagnes atterrissent en Inbox, Spam ou Promotions — et découvrez pourquoi. En quelques minutes, obtenez une analyse complète de votre configuration technique avec des recommandations concrètes pour améliorer vos performances.',
