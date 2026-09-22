@@ -372,7 +372,7 @@ class DashboardController extends Controller
             ->where(function($query) {
                 $query->where('status', 'failed')
                     ->orWhere('status', 'cancelled')
-                    ->orWhereRaw('(status = "completed" AND received_emails = 0)');
+                    ->orWhereRaw("(status = 'completed' AND received_emails = 0)");
             })
             ->orderBy('created_at', 'desc')
             ->limit(10)

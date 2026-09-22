@@ -73,9 +73,9 @@ class TestAdminController extends Controller
             // Récupérer les stats d'authentification depuis ReceivedEmail
             $authStats = TestResult::where('test_id', $test->id)
                 ->select(
-                    DB::raw('SUM(spf_result = "pass") as spf_pass'),
-                    DB::raw('SUM(dkim_result = "pass") as dkim_pass'),
-                    DB::raw('SUM(dmarc_result = "pass") as dmarc_pass'),
+                    DB::raw("SUM(CASE WHEN spf_result = 'pass' THEN 1 ELSE 0 END) as spf_pass"),
+                    DB::raw("SUM(CASE WHEN dkim_result = 'pass' THEN 1 ELSE 0 END) as dkim_pass"),
+                    DB::raw("SUM(CASE WHEN dmarc_result = 'pass' THEN 1 ELSE 0 END) as dmarc_pass"),
                     DB::raw('COUNT(*) as total')
                 )
                 ->first();
@@ -131,15 +131,15 @@ class TestAdminController extends Controller
             // Dernières 24h : afficher par heure (données live uniquement)
             $testsPerHour = Test::where('created_at', '>=', now()->subHours(24))
                 ->select(
-                    DB::raw('HOUR(created_at) as hour'),
+                    DB::raw('EXTRACT(HOUR FROM created_at) as hour'),
                     DB::raw('count(*) as total'),
-                    DB::raw('SUM(status = "pending") as pending'),
-                    DB::raw('SUM(status = "in_progress") as in_progress'),
-                    DB::raw('SUM(status = "completed") as completed'),
-                    DB::raw('SUM(status = "cancelled") as cancelled'),
-                    DB::raw('SUM(status = "timeout") as timeout')
+                    DB::raw("SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending"),
+                    DB::raw("SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress"),
+                    DB::raw("SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed"),
+                    DB::raw("SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled"),
+                    DB::raw("SUM(CASE WHEN status = 'timeout' THEN 1 ELSE 0 END) as timeout")
                 )
-                ->groupBy(DB::raw('HOUR(created_at)'))
+                ->groupBy(DB::raw('EXTRACT(HOUR FROM created_at)'))
                 ->orderBy('hour')
                 ->get()
                 ->map(function ($item) {
@@ -181,15 +181,15 @@ class TestAdminController extends Controller
             // 2. Récupérer les données live pour les dates récentes
             $liveData = Test::where('created_at', '>=', max($periodStart, $retentionCutoff))
                 ->select(
-                    DB::raw('DATE(created_at) as date'),
+                    DB::raw('created_at::date as date'),
                     DB::raw('count(*) as total'),
-                    DB::raw('SUM(status = "pending") as pending'),
-                    DB::raw('SUM(status = "in_progress") as in_progress'),
-                    DB::raw('SUM(status = "completed") as completed'),
-                    DB::raw('SUM(status = "cancelled") as cancelled'),
-                    DB::raw('SUM(status = "timeout") as timeout')
+                    DB::raw("SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending"),
+                    DB::raw("SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress"),
+                    DB::raw("SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed"),
+                    DB::raw("SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled"),
+                    DB::raw("SUM(CASE WHEN status = 'timeout' THEN 1 ELSE 0 END) as timeout")
                 )
-                ->groupBy(DB::raw('DATE(created_at)'))
+                ->groupBy(DB::raw('created_at::date'))
                 ->get()
                 ->keyBy('date');
             
@@ -238,9 +238,9 @@ class TestAdminController extends Controller
                 'visitor_email',
                 DB::raw('count(*) as test_count'),
                 DB::raw('MAX(created_at) as last_test'),
-                DB::raw('GROUP_CONCAT(DISTINCT audience_type) as audience_types'),
+                DB::raw("STRING_AGG(DISTINCT audience_type, ',') as audience_types"),
                 DB::raw('AVG(received_emails) as avg_received'),
-                DB::raw('SUM(status = "completed") as completed_tests')
+                DB::raw("SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_tests")
             )
             ->groupBy('visitor_email')
             ->orderByDesc('test_count')
@@ -256,7 +256,7 @@ class TestAdminController extends Controller
                 $spamStats = TestResult::whereIn('test_id', $visitorTests)
                     ->select(
                         DB::raw('COUNT(*) as total'),
-                        DB::raw('SUM(placement = "spam") as spam_count')
+                        DB::raw("SUM(CASE WHEN placement = 'spam' THEN 1 ELSE 0 END) as spam_count")
                     )
                     ->first();
                 
@@ -267,9 +267,9 @@ class TestAdminController extends Controller
                 // Vérifier les problèmes d'authentification depuis ReceivedEmail
                 $authStats = TestResult::whereIn('test_id', $visitorTests)
                     ->select(
-                        DB::raw('AVG(CASE WHEN spf_result = "pass" THEN 100 ELSE 0 END) as spf_score'),
-                        DB::raw('AVG(CASE WHEN dkim_result = "pass" THEN 100 ELSE 0 END) as dkim_score'),
-                        DB::raw('AVG(CASE WHEN dmarc_result = "pass" THEN 100 ELSE 0 END) as dmarc_score')
+                        DB::raw("AVG(CASE WHEN spf_result = 'pass' THEN 100 ELSE 0 END) as spf_score"),
+                        DB::raw("AVG(CASE WHEN dkim_result = 'pass' THEN 100 ELSE 0 END) as dkim_score"),
+                        DB::raw("AVG(CASE WHEN dmarc_result = 'pass' THEN 100 ELSE 0 END) as dmarc_score")
                     )
                     ->first();
                 

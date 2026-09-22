@@ -52,24 +52,24 @@ class ArchiveTestMetricsCommand extends Command
         
         // Tests par statut
         $testStats = Test::whereBetween('created_at', [$date, $endDate])
-            ->selectRaw('
+            ->selectRaw("
                 COUNT(*) as total,
-                SUM(status = "completed") as completed,
-                SUM(status = "pending") as pending,
-                SUM(status = "in_progress") as in_progress,
-                SUM(status = "timeout") as timeout
-            ')
+                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
+                SUM(CASE WHEN status = 'timeout' THEN 1 ELSE 0 END) as timeout
+            ")
             ->first();
         
         // Emails et placements
         $emailStats = TestResult::whereHas('test', function($query) use ($date, $endDate) {
                 $query->whereBetween('created_at', [$date, $endDate]);
             })
-            ->selectRaw('
+            ->selectRaw("
                 COUNT(*) as total_emails,
-                SUM(placement = "inbox") as inbox_count,
-                SUM(placement = "spam") as spam_count
-            ')
+                SUM(CASE WHEN placement = 'inbox' THEN 1 ELSE 0 END) as inbox_count,
+                SUM(CASE WHEN placement = 'spam' THEN 1 ELSE 0 END) as spam_count
+            ")
             ->first();
         
         // Visiteurs uniques
@@ -85,7 +85,7 @@ class ArchiveTestMetricsCommand extends Command
             ->selectRaw('
                 email_accounts.provider,
                 COUNT(DISTINCT tests.id) as test_count,
-                SUM(test_email_accounts.email_received) as emails_received
+                SUM(CASE WHEN test_email_accounts.email_received THEN 1 ELSE 0 END) as emails_received
             ')
             ->groupBy('email_accounts.provider')
             ->get();
@@ -102,10 +102,10 @@ class ArchiveTestMetricsCommand extends Command
         // Distribution horaire
         $hourlyDistribution = Test::whereBetween('created_at', [$date, $endDate])
             ->selectRaw('
-                HOUR(created_at) as hour,
+                EXTRACT(HOUR FROM created_at) as hour,
                 COUNT(*) as count
             ')
-            ->groupBy(DB::raw('HOUR(created_at)'))
+            ->groupBy(DB::raw('EXTRACT(HOUR FROM created_at)'))
             ->get();
         
         // Calculer les taux
