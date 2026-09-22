@@ -12,19 +12,22 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Traiter les emails avec le système optimisé (batch et rate limiting)
+        // La détection courante est assurée par le démon `emails:watch`, à
+        // cadence rapprochée. Ces deux tâches ne servent plus que de filet de
+        // sécurité si le démon est arrêté : espacées, elles ne consomment pas
+        // le quota horaire de connexions des fournisseurs.
         $schedule->command('emails:process-optimized')
-            ->everyMinute()
+            ->everyFiveMinutes()
             ->withoutOverlapping(10)  // Timeout de 10 minutes pour éviter les chevauchements
             ->runInBackground()
             ->appendOutputTo(storage_path('logs/email-processing-optimized.log'));
-            
+
         // Traiter la queue des jobs ProcessEmailAddressJob
         // Pas besoin de withoutOverlapping car les jobs sont ShouldBeUnique
         // timeout=50 : Ne prend plus de nouveaux jobs après 50 secondes
         // Les jobs en cours peuvent continuer jusqu'à leur propre timeout (120 sec)
         $schedule->command('emails:process-addresses --timeout=50')
-            ->everyMinute()
+            ->everyFiveMinutes()
             ->runInBackground()
             ->appendOutputTo(storage_path('logs/email-queue-processing.log'));
             

@@ -25,6 +25,9 @@ class Test extends Model
         'language',
         'timeout_at',
         'expires_at',
+        'sending_domain',
+        'domain_analysis',
+        'domain_analyzed_at',
     ];
 
     protected $casts = [
@@ -32,6 +35,8 @@ class Test extends Model
         'received_emails' => 'integer',
         'timeout_at' => 'datetime',
         'expires_at' => 'datetime',
+        'domain_analysis' => 'array',
+        'domain_analyzed_at' => 'datetime',
     ];
 
     protected static function boot()

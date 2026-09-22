@@ -41,13 +41,9 @@ class TestController extends Controller
             app()->setLocale($language);
         }
         
-        // Vérifier si l'utilisateur est authentifié pour pré-remplir l'email
-        $prefilledEmail = null;
-        if ($this->isAuthenticated()) {
-            $prefilledEmail = session('verified_email');
-        }
-        
-        return view('test.create', compact('prefilledEmail'));
+        // Le parcours de création est désormais intégré à la page d'accueil.
+        // On conserve la route pour ne pas casser les liens existants.
+        return redirect()->route('home', ['lang' => app()->getLocale()]);
     }
 
     /**
@@ -64,7 +60,7 @@ class TestController extends Controller
             ]);
         }
         
-        $remaining = VerificationVerificationRateLimit::getRemaining('email', $email);
+        $remaining = VerificationRateLimit::getRemaining('email', $email);
         $limit = config('mailsoar.rate_limit_per_email', 50);
         
         return response()->json([
@@ -222,12 +218,17 @@ class TestController extends Controller
                 }
                 
                 Log::info('[TEST_CREATE] Creating test', ['accounts' => $accountCount]);
+                $preview = app(\App\Services\PublicTestPreview::class);
+
                 $test = $this->testService->createTest([
                     'visitor_email' => $email,
                     'visitor_ip' => $ip,
                     'audience_type' => $audienceType,
                     'test_size' => min(config('mailsoar.default_test_size', 25), $accountCount),
+                    // Identifiant déjà montré au visiteur, qui l'a inséré dans son email
+                    'unique_id' => session('reserved_test_id'),
                 ]);
+                $preview->release();
                 Log::info('[TEST_CREATE] Test created successfully', ['test_id' => $test->unique_id]);
                 
                 $seedEmails = $test->emailAccounts->map(function ($account) {
@@ -295,56 +296,107 @@ class TestController extends Controller
     /**
      * Afficher les résultats du test
      */
-    public function results(Request $request, $uniqueId)
+    /**
+     * Page de suivi d'un test, à son URL propre (/MS-XXXXXX).
+     * Affiche l'attente tant que le test tourne, puis les résultats.
+     * L'actualisation ne perd rien : tout est rendu côté serveur.
+     */
+    public function track(Request $request, $trackingId)
     {
-        // Gérer le changement de langue
         if ($request->has('lang')) {
             $language = in_array($request->lang, ['fr', 'en']) ? $request->lang : 'fr';
             session(['language' => $language]);
             app()->setLocale($language);
         } else {
-            $language = session('language', $this->detectLanguage($request));
-            app()->setLocale($language);
+            app()->setLocale(session('language', $this->detectLanguage($request)));
         }
-        
-        $test = Test::where('unique_id', $uniqueId)
-            ->with(['emailAccounts', 'results.emailAccount'])
+
+        $test = Test::where('unique_id', $trackingId)
+            ->with(['emailAccounts', 'results'])
             ->firstOrFail();
 
-        // Générer des données fictives si aucun résultat n'existe
-        // Fonctionnalité de génération de résultats fictifs désactivée
-        // NOTE: Cette fonctionnalité était utilisée pour la démonstration
-        // if ($test->receivedEmails->isEmpty() && $test->status === 'pending') {
-        //     // Simuler un délai de traitement
-        //     $test->status = 'in_progress';
-        //     $test->save();
-        //     
-        //     // Générer les résultats fictifs
-        //     $this->testService->generateFakeResults($test);
-        // }
+        $isFinished = in_array($test->status, ['completed', 'timeout', 'cancelled'], true)
+            || $test->isComplete()
+            || $test->isTimedOut();
 
-        // Récupérer la liste des providers disponibles
-        $providers = collect();
-        
-        // Ajouter les providers OAuth natifs
-        $providers->push((object)['name' => 'gmail', 'display_name' => 'Gmail']);
-        $providers->push((object)['name' => 'outlook', 'display_name' => 'Outlook']);
-        $providers->push((object)['name' => 'yahoo', 'display_name' => 'Yahoo']);
-        
-        // Ajouter les providers depuis la base de données
-        $dbProviders = \DB::table('email_providers')
-            ->where('is_active', 1)
-            ->whereNotIn('name', ['gmail', 'outlook', 'yahoo']) // Exclure ceux déjà ajoutés
-            ->select('name', 'display_name', 'domains', 'mx_patterns')
-            ->orderBy('display_name')
-            ->get();
-            
-        $providers = $providers->merge($dbProviders);
-        
-        // Trier par nom d'affichage
-        $providers = $providers->sortBy('display_name')->values();
+        // Dès qu'un seul résultat est disponible, on le montre : inutile de
+        // retenir le visiteur jusqu'au terme du délai. La page continue de se
+        // rafraîchir tant que d'autres réponses peuvent arriver.
+        return view('test.track', [
+            'test' => $test,
+            'isFinished' => $isFinished,
+            'hasResults' => $test->results->isNotEmpty(),
+            'analysis' => app(\App\Services\ComplianceScoreService::class)->analyze($test),
+            // Diagnostic du domaine d'envoi, figé au moment du test
+            'dns' => $test->domain_analysis ?? [],
+            // Le diagnostic tourne en arrière-plan : tant qu'il n'a pas rendu
+            // sa copie, les cartes s'affichent en attente plutôt qu'à vide.
+            'analysisPending' => $test->results->isNotEmpty() && $test->domain_analyzed_at === null,
+            'secondsLeft' => $test->timeout_at ? max(0, (int) now()->diffInSeconds($test->timeout_at, false)) : 0,
+        ]);
+    }
 
-        return view('test.results', compact('test', 'providers'));
+    /**
+     * État d'un test au format JSON, interrogé par la page publique pendant
+     * l'attente. Renvoie l'analyse complète dès que le test est terminé.
+     */
+    public function status($uniqueId)
+    {
+        $test = Test::where('unique_id', $uniqueId)
+            ->with(['emailAccounts', 'results'])
+            ->firstOrFail();
+
+        $isFinished = in_array($test->status, ['completed', 'timeout', 'cancelled'], true)
+            || $test->isComplete()
+            || $test->isTimedOut();
+
+        $accounts = $test->emailAccounts->map(function ($account) use ($test) {
+            $result = $test->results->firstWhere('email_account_id', $account->id);
+
+            return [
+                'email' => $account->email,
+                'provider' => $account->getRealProvider(),
+                'received' => $result !== null,
+                'placement' => $result?->placement,
+                'folder' => $result?->folder_name,
+            ];
+        })->values();
+
+        $payload = [
+            'test_id' => $test->unique_id,
+            'status' => $test->status,
+            'is_finished' => $isFinished,
+            'received' => $test->results->count(),
+            'expected' => $test->emailAccounts->count(),
+            'accounts' => $accounts,
+            'seconds_left' => $test->timeout_at
+                ? max(0, now()->diffInSeconds($test->timeout_at, false))
+                : null,
+            // Permet à la page de résultats de savoir quand le diagnostic DNS
+            // est disponible, pour se recharger au bon moment.
+            'domain_analyzed' => $test->domain_analyzed_at !== null,
+            'results_url' => route('test.results', $test->unique_id),
+        ];
+
+        if ($isFinished || $test->results->isNotEmpty()) {
+            $payload['analysis'] = app(\App\Services\ComplianceScoreService::class)->analyze($test);
+        }
+
+        return response()->json($payload);
+    }
+
+    /**
+     * Ancien permalien des résultats : le suivi vit désormais à son URL courte,
+     * qui porte l'attente comme les résultats. On y redirige pour n'avoir
+     * qu'une seule adresse canonique.
+     */
+    public function results(Request $request, $uniqueId)
+    {
+        $lang = $request->has('lang') && in_array($request->lang, ['fr', 'en'])
+            ? $request->lang
+            : session('language', $this->detectLanguage($request));
+
+        return redirect()->route('test.track', ['trackingId' => $uniqueId, 'lang' => $lang], 301);
     }
 
     public function show($uniqueId)

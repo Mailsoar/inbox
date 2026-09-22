@@ -303,6 +303,11 @@ class ProcessEmailAddressJob implements ShouldQueue, ShouldBeUnique
                     'dmarc_result' => $authData['dmarc']
                 ]);
 
+                // Premier email reçu : on diagnostique le domaine d'envoi, hors ligne.
+                if ($test->domain_analyzed_at === null) {
+                    \App\Jobs\AnalyzeSendingDomainJob::dispatch($test->id);
+                }
+
                 // Update test counts
                 Log::info('[ProcessEmailAddress] Updating test progress', [
                     'test_id' => $test->unique_id,
@@ -310,7 +315,7 @@ class ProcessEmailAddressJob implements ShouldQueue, ShouldBeUnique
                     'current_received' => $test->received_emails,
                     'will_be' => $test->received_emails + 1
                 ]);
-                
+
                 $test->increment('received_emails');
                 
                 // Update pivot table

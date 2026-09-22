@@ -124,4 +124,13 @@ return [
             'Junk' => 'spam',
         ],
     ],
+
+    /*
+     * Agenda « Parler à un expert délivrabilité » ouvert en popup sous les
+     * résultats. Surchargeable par MAILSOAR_EXPERT_URL dans le .env.
+     */
+    'expert_booking_url' => env(
+        'MAILSOAR_EXPERT_URL',
+        'https://calendly.com/pierre-mailsoar/talk-expert-test-deliverability'
+    ),
 ];

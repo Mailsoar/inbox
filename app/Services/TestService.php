@@ -20,8 +20,9 @@ class TestService
         DB::beginTransaction();
         
         try {
-            // Générer l'ID unique
-            $uniqueId = $this->generateUniqueId();
+            // L'identifiant peut avoir été réservé par la page publique, afin que le
+            // visiteur l'insère dans son email avant même de lancer le test.
+            $uniqueId = $this->claimUniqueId($data['unique_id'] ?? null);
             
             // Créer le test
             $test = Test::create([
@@ -72,8 +73,24 @@ class TestService
             // Format: MS-XXXXXX (MS = MailSoar)
             $id = 'MS-' . strtoupper(Str::random(6));
         } while (Test::where('unique_id', $id)->exists());
-        
+
         return $id;
+    }
+
+    /**
+     * Retient l'identifiant réservé par la page publique s'il est valide et
+     * toujours libre, sinon en génère un nouveau. Le visiteur a pu le coller
+     * dans son email avant de lancer le test : on évite de le changer.
+     */
+    private function claimUniqueId(?string $reserved): string
+    {
+        if ($reserved
+            && preg_match('/^MS-[A-Z0-9]{6}$/', $reserved)
+            && ! Test::where('unique_id', $reserved)->exists()) {
+            return $reserved;
+        }
+
+        return $this->generateUniqueId();
     }
     
     /**

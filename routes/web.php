@@ -48,6 +48,9 @@ Route::get('/test/{unique_id}', [TestController::class, 'show'])->name('test.sho
 // API pour récupérer les mises à jour du test (SSE)
 Route::get('/test/{unique_id}/stream', [TestController::class, 'stream'])->name('test.stream');
 
+// État d'un test en JSON, interrogé par la page publique pendant l'attente
+Route::get('/test/{unique_id}/status', [TestController::class, 'status'])->name('test.status');
+
 // Retrouver ses tests par email (avec vérification)
 Route::match(['get', 'post'], '/my-tests', [TestController::class, 'requestAccess'])->name('test.request-access');
 Route::match(['get', 'post'], '/my-tests/verify', [TestController::class, 'verifyCode'])->name('test.verify-code');
@@ -80,10 +83,18 @@ Route::get('/refresh-csrf', function() {
 */
 
 // Page de login admin
-Route::get('/admin/login', function () {
+Route::get('/admin/login', function (Request $request) {
     if (auth('admin')->check()) {
         return redirect()->route('admin.dashboard');
     }
+
+    // La page adopte le layout public, qui porte le sélecteur de langue :
+    // sans cela, le bouton FR/EN resterait sans effet ici.
+    if (in_array($request->query('lang'), ['fr', 'en'], true)) {
+        session(['language' => $request->query('lang')]);
+    }
+    app()->setLocale(session('language', 'fr'));
+
     return view('admin.login');
 })->name('admin.login');
 
@@ -310,6 +321,18 @@ Route::prefix('admin')->middleware('admin.auth')->group(function () {
         ->name('admin.logs.clear')
         ->middleware('permission:system_config');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Suivi public d'un test — URL courte et partageable : /MS-XXXXXX
+|--------------------------------------------------------------------------
+| Déclarée en dernier, et contrainte au format de l'identifiant, pour ne
+| jamais capturer une autre route.
+*/
+
+Route::get('/{trackingId}', [TestController::class, 'track'])
+    ->where('trackingId', 'MS-[A-Za-z0-9]{6}')
+    ->name('test.track');
 
 /*
 |--------------------------------------------------------------------------

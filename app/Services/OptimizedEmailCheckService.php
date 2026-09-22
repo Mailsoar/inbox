@@ -301,7 +301,7 @@ class OptimizedEmailCheckService
                 'hour_started_at' => $hourStart
             ],
             [
-                'connections_count' => DB::raw('IFNULL(connections_count, 0) + 1'),
+                'connections_count' => DB::raw('COALESCE(connections_count, 0) + 1'),
                 'last_connection_at' => now(),
                 'updated_at' => now()
             ]
@@ -503,9 +503,14 @@ class OptimizedEmailCheckService
             'dmarc_result' => $authData['dmarc']
         ]);
         
+        // Premier email reçu : on diagnostique le domaine d'envoi, hors ligne.
+        if ($test->domain_analyzed_at === null) {
+            \App\Jobs\AnalyzeSendingDomainJob::dispatch($test->id);
+        }
+
         // Update test counts
         $test->increment('received_emails');
-        
+
         // Update pivot table
         DB::table('test_email_accounts')
             ->where('test_id', $test->id)

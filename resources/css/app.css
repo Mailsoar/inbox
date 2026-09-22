@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 45 56% 95%;
+        --foreground: 60 3% 12%;
+        --card: 0 0% 100%;
+        --card-foreground: 60 3% 12%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 60 3% 12%;
+        --primary: 158 72% 65%;
+        --primary-foreground: 60 3% 12%;
+        --secondary: 46 44% 90%;
+        --secondary-foreground: 60 3% 12%;
+        --muted: 45 30% 87%;
+        --muted-foreground: 29 8% 30%;
+        --accent: 158 59% 49%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 345 62% 52%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 45 30% 87%;
+        --input: 45 30% 87%;
+        --ring: 158 59% 49%;
+        --radius: 0.5rem;
+        --font-heading: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+        --font-body: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    }
+
+    .dark {
+        --background: 60 3% 12%;
+        --foreground: 45 56% 95%;
+        --card: 60 3% 16%;
+        --card-foreground: 45 56% 95%;
+        --popover: 60 3% 16%;
+        --popover-foreground: 45 56% 95%;
+        --primary: 158 72% 65%;
+        --primary-foreground: 60 3% 12%;
+        --secondary: 60 3% 20%;
+        --secondary-foreground: 45 56% 95%;
+        --muted: 60 3% 20%;
+        --muted-foreground: 45 20% 70%;
+        --accent: 158 59% 49%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 345 62% 52%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 60 3% 22%;
+        --input: 60 3% 22%;
+        --ring: 158 59% 49%;
+    }
+
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground font-body antialiased;
+    }
+}
+
+@layer components {
+    /* Boutons — équivalents Blade des variantes shadcn/ui utilisées par la maquette */
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium
+               ring-offset-background transition-colors focus-visible:outline-none
+               focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+               disabled:pointer-events-none disabled:opacity-50;
+    }
+
+    .btn-primary {
+        @apply btn bg-primary text-primary-foreground hover:bg-primary/90;
+    }
+
+    .btn-outline {
+        @apply btn border border-input bg-background hover:bg-accent hover:text-accent-foreground;
+    }
+
+    .btn-ghost {
+        @apply btn hover:bg-accent hover:text-accent-foreground;
+    }
+
+    .btn-lg {
+        @apply h-12 px-6;
+    }
+
+    .btn-md {
+        @apply h-10 px-4 py-2;
+    }
+
+    .btn-sm {
+        @apply h-9 px-3;
+    }
+
+    .card {
+        @apply rounded-2xl border border-border bg-card text-card-foreground;
+    }
+
+    .input {
+        @apply flex h-12 w-full rounded-lg border border-input bg-background px-4 py-2 text-base
+               ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none
+               focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+               disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .badge {
+        @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium;
+    }
+}
+
+@layer utilities {
+    .bg-mesh {
+        background-image:
+            radial-gradient(at 15% 0%, hsl(158 60% 92%) 0px, transparent 50%),
+            radial-gradient(at 85% 5%, hsl(46 44% 90%) 0px, transparent 50%),
+            radial-gradient(at 50% 100%, hsl(45 56% 95%) 0px, transparent 50%);
+    }
+}
