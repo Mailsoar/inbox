@@ -18,7 +18,14 @@ return [
     'email_retention_days' => env('EMAIL_RETENTION_DAYS', 30),
     'email_check_timeout_minutes' => env('EMAIL_CHECK_TIMEOUT_MINUTES', 30),
     'default_test_size' => env('DEFAULT_TEST_SIZE', 25),
+    // Page de suivi : on affiche les résultats dès que cette part des boîtes
+    // a répondu, ou ce délai après le lancement du test (s'il a reçu au moins un email).
+    'results_reveal_ratio' => env('RESULTS_REVEAL_RATIO', 0.8),
+    'results_reveal_delay_seconds' => env('RESULTS_REVEAL_DELAY_SECONDS', 120),
     'max_email_size_kb' => env('MAX_EMAIL_SIZE_KB', 500),
+
+    // Destinataires des alertes de connexion des boîtes de test (séparés par des virgules)
+    'alert_emails' => env('ADMIN_ALERT_EMAILS', env('ADMIN_EMAIL', '')),
 
     /*
     |--------------------------------------------------------------------------

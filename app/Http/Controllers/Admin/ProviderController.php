@@ -64,6 +64,7 @@ class ProviderController extends Controller
             'display_name' => 'required|string|max:100',
             'description' => 'nullable|string',
             'provider_type' => 'required|in:b2c,b2b,custom,discontinued',
+            'country' => 'nullable|string|size:2|alpha',
             'imap_host' => 'nullable|string|max:255',
             'imap_port' => 'nullable|integer',
             'imap_encryption' => 'nullable|in:ssl,tls,none',
@@ -75,6 +76,8 @@ class ProviderController extends Controller
             'domains' => 'nullable|string',
             'mx_patterns' => 'nullable|string',
         ]);
+
+        $validated['country'] = isset($validated['country']) ? strtolower($validated['country']) : null;
 
         // Convertir les chaînes en tableaux JSON
         if ($request->filled('domains')) {
@@ -107,6 +110,7 @@ class ProviderController extends Controller
             'display_name' => 'required|string|max:100',
             'description' => 'nullable|string',
             'provider_type' => 'required|in:b2c,b2b,custom,discontinued',
+            'country' => 'nullable|string|size:2|alpha',
             'imap_host' => 'nullable|string|max:255',
             'imap_port' => 'nullable|integer',
             'imap_encryption' => 'nullable|in:ssl,tls,none',
@@ -124,6 +128,8 @@ class ProviderController extends Controller
             'mx_patterns' => 'nullable|string',
             'is_active' => 'boolean',
         ]);
+
+        $validated['country'] = isset($validated['country']) ? strtolower($validated['country']) : null;
 
         // Convertir les chaînes en tableaux JSON
         if ($request->filled('domains')) {

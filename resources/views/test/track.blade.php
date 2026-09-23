@@ -28,7 +28,7 @@
                 </svg>
                 <div class="absolute inset-0 flex flex-col items-center justify-center">
                     <div data-countdown class="text-5xl font-bold tabular-nums font-heading">--:--</div>
-                    <div data-ring-label class="text-sm text-muted-foreground mt-2">{{ __('messages.test.ring_waiting') }}</div>
+                    <div data-ring-label class="text-sm text-muted-foreground mt-2">{{ $test->results->isNotEmpty() ? __('messages.test.ring_reveal') : __('messages.test.ring_waiting') }}</div>
                 </div>
             </div>
 
@@ -93,7 +93,13 @@
                     </span>
                 </div>
                 <div data-feed class="px-4 py-3 space-y-2 min-h-[80px]"></div>
+                <div data-feed-pending class="hidden px-4 py-2 border-t border-border text-xs text-muted-foreground"></div>
             </div>
+
+            <a data-partial href="{{ route('test.track', $test->unique_id) }}?partial=1"
+               class="{{ $test->results->isNotEmpty() ? '' : 'hidden' }} mt-4 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2">
+                {{ __('messages.test.see_partial_now') }}
+            </a>
 
             {{-- Rappel : la page peut être quittée puis rouverte --}}
             <p class="mt-6 text-xs text-muted-foreground text-center max-w-sm">
@@ -252,6 +258,16 @@
 @endif
 
 @if (! $isFinished)
+@push('head')
+<style>
+    @keyframes feed-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+    .animate-feed-in { animation: feed-in .4s ease-out; }
+    /* Message d'attente : s'efface puis réapparaît en boucle */
+    @keyframes waiting-blink { 0%, 100% { opacity: 1; } 50% { opacity: .15; } }
+    .animate-waiting { animation: waiting-blink 2.4s ease-in-out infinite; }
+</style>
+@endpush
+
 @push('scripts')
 @php
     $jsLabels = [
@@ -263,6 +279,12 @@
         'waitingEmails' => __('messages.test.waiting_emails'),
         'ringWaiting' => __('messages.test.ring_waiting'),
         'ringAnalyzing' => __('messages.test.analyzing'),
+        'ringReveal' => __('messages.test.ring_reveal'),
+        'pendingCount' => __('messages.test.pending_count'),
+        'liveMissing' => __('messages.test.live_missing'),
+        'liveDomainRunning' => __('messages.test.detail_domain_running'),
+        'liveDomainDone' => __('messages.test.live_domain_done'),
+        'revealNow' => __('messages.test.reveal_now'),
         'refreshing' => __('messages.test.refreshing'),
         'statuses' => [
             __('messages.test.status_1'),
@@ -274,9 +296,10 @@
 
     $jsConfig = [
         'statusUrl' => route('test.status', $test->unique_id),
-        'secondsLeft' => $secondsLeft,
-        'timeoutSeconds' => config('mailsoar.email_check_timeout_minutes', 30) * 60,
         'knownResults' => $test->results->count(),
+        'threshold' => $test->revealThreshold(),
+        'revealDelay' => (int) config('mailsoar.results_reveal_delay_seconds', 120),
+        'revealIn' => max(0, (int) now()->diffInSeconds($test->revealAt(), false)),
         'showingResults' => $hasResults,
         // Adresses rattachées à ce test, pour la copie et l'export
         'seeds' => $test->emailAccounts->map(fn ($a) => [
@@ -332,27 +355,52 @@
     const feedDot   = document.querySelector('[data-feed-dot]');
     const feedCnt   = document.querySelector('[data-feed-count]');
 
-    let left = CFG.secondsLeft;
-    let shownStatus = -1;
+    let revealLeft = CFG.revealIn; // secondes avant l'affichage des résultats
+    let live = null;               // dernier état connu, pour le message du moment
+    let shownStatus = null;
+
+    /** Remplace le message sous l'anneau en fondu, seulement s'il change. */
+    function say(text) {
+        if (text === shownStatus) return;
+        shownStatus = text;
+        status.style.opacity = '0';
+        setTimeout(function () {
+            status.textContent = text;
+            status.style.opacity = '1';
+        }, 150);
+    }
+
+    function fill(template, values) {
+        return template.replace(/:(\w+)/g, function (m, key) {
+            return key in values ? values[key] : m;
+        });
+    }
 
     function tick() {
-        const remaining = Math.max(0, left);
-        clock.textContent = Math.floor(remaining / 60) + ':' + String(remaining % 60).padStart(2, '0');
+        // Le compteur montre le temps d'attente maximal : 2 minutes décomptées
+        // dès le lancement du test.
+        const total = CFG.revealDelay;
+        const remaining = Math.max(0, revealLeft);
 
-        const elapsed = (CFG.timeoutSeconds - remaining) / CFG.timeoutSeconds;
+        clock.textContent = Math.floor(remaining / 60) + ':' + String(remaining % 60).padStart(2, '0');
+        const elapsed = (total - remaining) / total;
         ring.style.strokeDashoffset = RING * (1 - Math.min(1, Math.max(0, elapsed)));
 
-        const index = Math.min(T.statuses.length - 1, Math.floor(elapsed * T.statuses.length));
-        if (index !== shownStatus) {
-            shownStatus = index;
-            status.style.opacity = '0';
-            setTimeout(function () {
-                status.textContent = T.statuses[index];
-                status.style.opacity = '1';
-            }, 150);
+        if (!live || live.received === 0) {
+            // Rien reçu : les résultats attendront le premier email, même
+            // une fois le délai écoulé.
+            say(T.statuses[0]);
+        } else if (live) {
+            // Les messages du moment défilent : boîtes manquantes, diagnostic…
+            const missing = Math.max(0, CFG.threshold - live.received);
+            const messages = [
+                remaining > 0 ? fill(T.liveMissing, { missing: missing }) : T.revealNow,
+                live.domain_analyzed ? T.liveDomainDone : T.liveDomainRunning,
+            ];
+            say(messages[Math.floor(Date.now() / 4000) % messages.length]);
         }
 
-        left -= 1;
+        if (revealLeft > 0) revealLeft -= 1;
     }
     tick();
     setInterval(tick, 1000);
@@ -366,14 +414,28 @@
         }
     }
 
+    const shown = new Set();
+    const feedPending = document.querySelector('[data-feed-pending]');
+
     function renderFeed(accounts) {
         const arrived = (accounts || []).filter(function (a) { return a.received; });
+        const waiting = (accounts || []).filter(function (a) { return !a.received; });
+
+        feedPending.classList.toggle('hidden', !arrived.length || !waiting.length);
+        feedPending.textContent = fill(T.pendingCount, {
+            count: waiting.length,
+            list: waiting.map(function (a) { return a.provider; }).join(', '),
+        });
 
         feedDot.className = 'w-2 h-2 rounded-full ' +
             (arrived.length ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground');
 
         if (!arrived.length) {
-            feed.innerHTML = '<p class="text-sm text-muted-foreground py-4 text-center">' + esc(T.waitingEmails) + '</p>';
+            // Déjà affiché : on ne le réécrit pas, sinon l'animation repartirait
+            // de zéro à chaque interrogation du serveur.
+            if (!feed.querySelector('[data-waiting]')) {
+                feed.innerHTML = '<p data-waiting class="text-sm text-muted-foreground py-4 text-center animate-waiting">' + esc(T.waitingEmails) + '</p>';
+            }
             return;
         }
 
@@ -384,7 +446,11 @@
                 ? '<path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>'
                 : '<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M5.07 19h13.86a2 2 0 001.74-2.99l-6.93-12a2 2 0 00-3.48 0l-6.93 12A2 2 0 005.07 19z"/>';
 
-            return '<div class="flex items-center gap-2.5 text-sm">' +
+            // Seules les nouvelles arrivées s'animent
+            const fresh = !shown.has(a.email);
+            shown.add(a.email);
+
+            return '<div class="flex items-center gap-2.5 text-sm' + (fresh ? ' animate-feed-in' : '') + '">' +
                 '<svg class="w-4 h-4 shrink-0 ' + tone[1] + '" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">' + icon + '</svg>' +
                 '<svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">' +
                     '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' +
@@ -407,25 +473,28 @@
             return; // nouvelle tentative au prochain tour
         }
 
+        live = data;
+        revealLeft = data.reveal_in;
+
         feedCnt.textContent = data.received + '/' + data.expected + ' ' + T.received;
         renderFeed(data.accounts);
 
-        // Premier email détecté : on marque l'analyse, puis on affiche les
-        // résultats sans attendre les autres réponses.
         if (data.received > 0) {
+            ringLabel.textContent = T.ringReveal;
+            document.querySelector('[data-partial]').classList.remove('hidden');
+        }
+
+        // Assez de boîtes ont répondu, ou le délai est écoulé : on affiche
+        // les résultats.
+        if (data.results_ready || data.is_finished) {
             switching = true;
             ringLabel.textContent = T.ringAnalyzing;
             setTimeout(function () { window.location.reload(); }, 1200);
-            return;
-        }
-
-        if (data.is_finished) {
-            window.location.reload();
         }
     }
 
     poll();
-    setInterval(poll, 5000);
+    setInterval(poll, 4000);
 
     /* ── rattrapage : recopier l'ID ou la liste d'adresses ── */
 

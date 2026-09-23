@@ -110,6 +110,13 @@ return [
     
     // Test creation page
     'test' => [
+        'ring_reveal' => "until your results",
+        'pending_count' => "Still waiting (:count): :list",
+        'live_missing' => ":missing more mailbox(es) and your results will show…",
+        'live_domain_done' => "Sending domain diagnostic complete.",
+        'see_partial_now' => "See partial results now",
+        'reveal_now' => "Loading your results…",
+        'detail_domain_running' => "Checking SPF, DKIM, DMARC, BIMI and blocklists…",
         'ring_waiting' => "waiting for emails…",
         'refreshing' => "refreshing…",
         'partial_results' => "Partial results — :received of :total mailboxes have replied so far. This page updates on its own as the others arrive.",
@@ -206,6 +213,9 @@ return [
     
     // Results page
     'results' => [
+        'audience_b2c' => 'Consumers (B2C)',
+        'audience_b2b' => 'Businesses (B2B)',
+        'in_inbox' => 'in inbox',
         'analysing' => "Analysing",
         'verdict_all_good' => "Authentication is solid and your emails reach the inbox. Keep it that way.",
         'verdict_placement_weak' => "Authentication is solid, but only :inbox of :total providers delivered to the inbox. Placement depends on more than authentication: sending reputation, content and list quality all weigh in.",

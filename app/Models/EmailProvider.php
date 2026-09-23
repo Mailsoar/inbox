@@ -7,11 +7,72 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class EmailProvider extends Model
 {
+    /**
+     * Libellés calculés par EmailAccount::getRealProvider() qui n'ont pas de
+     * fiche propre : ils héritent du fournisseur dont ils dérivent.
+     */
+    private const LABEL_ALIASES = [
+        'microsoft 365' => 'outlook',
+        'google workspace' => 'gmail',
+    ];
+
+    /** Codes pays par libellé, chargés une fois par requête. */
+    private static ?array $countriesByLabel = null;
+
+    /**
+     * Pays (code ISO en minuscules) du fournisseur affiché sous ce libellé,
+     * tel que renseigné dans l'admin. Null si inconnu.
+     */
+    public static function countryForLabel(string $label): ?string
+    {
+        if (self::$countriesByLabel === null) {
+            $providers = self::whereNotNull('country')->get(['name', 'display_name', 'country']);
+
+            self::$countriesByLabel = [];
+            foreach ($providers as $provider) {
+                self::$countriesByLabel[mb_strtolower($provider->display_name)] = $provider->country;
+                self::$countriesByLabel[mb_strtolower($provider->name)] = $provider->country;
+            }
+        }
+
+        $key = mb_strtolower(trim($label));
+        $key = self::LABEL_ALIASES[$key] ?? $key;
+
+        return self::$countriesByLabel[$key] ?? null;
+    }
+
+    /**
+     * Pays proposés dans l'admin : ceux dont on a le drapeau, nommés dans
+     * la langue courante. [code => nom], triés par nom.
+     */
+    public static function countryOptions(): array
+    {
+        $locale = app()->getLocale();
+        $options = [];
+
+        foreach (glob(public_path('images/flags/*.svg')) as $file) {
+            $code = basename($file, '.svg');
+            if (strlen($code) !== 2) {
+                continue;
+            }
+            $name = \Locale::getDisplayRegion('-' . strtoupper($code), $locale);
+            // Codes sans nom connu (ex. drapeaux régionaux) : ignorés
+            if ($name && strcasecmp($name, $code) !== 0) {
+                $options[$code] = $name;
+            }
+        }
+
+        asort($options, SORT_LOCALE_STRING);
+
+        return $options;
+    }
+
     protected $fillable = [
         'name',
         'display_name',
         'description',
         'provider_type',
+        'country',
         'is_valid',
         'is_active',
         'detection_priority',

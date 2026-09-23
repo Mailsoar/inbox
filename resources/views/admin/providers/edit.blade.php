@@ -54,6 +54,8 @@
                             @enderror
                         </div>
 
+                        @include('admin.providers.partials.country-field', ['current' => $provider->country])
+
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="provider_type" class="form-label">Type <span class="text-danger">*</span></label>

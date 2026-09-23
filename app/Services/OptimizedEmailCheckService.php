@@ -667,7 +667,8 @@ class OptimizedEmailCheckService
             'dmarc' => null
         ];
         
-        $headers = $emailData['headers'] ?? '';
+        // Verdict de la passerelle amont s'il existe (voir edgeHeaders)
+        $headers = \App\Services\EmailAuthenticationParser::edgeHeaders($emailData['headers'] ?? '');
         if (empty($headers)) {
             return $authData;
         }

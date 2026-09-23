@@ -206,37 +206,64 @@
     @endif
 @endif
 
-{{-- Placement par fournisseur, agrégé --}}
+{{-- Placement par fournisseur, en deux groupes : le filtrage grand public
+     et professionnel diffère, un taux global masquerait l'écart. --}}
+@php($audiences = collect($providers)->groupBy('audience'))
 <div>
     <h2 class="font-semibold text-lg mb-4">{{ __('messages.results.results_by_provider') }}</h2>
-    <div class="space-y-3">
-        @forelse ($providers as $row)
-            @php($tone = match ($row['placement']) {
-                'inbox' => ['text-emerald-600', 'bg-emerald-50', 'bg-emerald-500', __('messages.results.inbox')],
-                'spam' => ['text-amber-600', 'bg-amber-50', 'bg-amber-500', __('messages.results.spam')],
-                'other' => ['text-blue-600', 'bg-blue-50', 'bg-blue-500', __('messages.results.promotions')],
-                default => ['text-muted-foreground', 'bg-muted', 'bg-muted-foreground/40', __('messages.results.not_received')],
-            })
-            <div class="flex items-center gap-4 border border-border rounded-xl p-4 bg-card">
-                @include('test.partials.provider-icon', ['provider' => $row['provider']])
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center justify-between gap-2">
-                        <div class="font-medium truncate">{{ $row['provider'] }}</div>
-                        <span class="inline-flex items-center gap-1 text-sm font-medium shrink-0 {{ $tone[0] }} {{ $tone[1] }} px-2.5 py-0.5 rounded-full">
-                            {{ $tone[3] }}
-                        </span>
-                    </div>
-                    <div class="mt-2 flex items-center gap-3">
-                        <div class="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                            <div class="h-full rounded-full {{ $tone[2] }}" style="width: {{ $row['rate'] }}%"></div>
-                        </div>
-                        <span class="text-sm font-medium tabular-nums w-12 text-right">{{ $row['rate'] }}%</span>
-                    </div>
+    <div class="space-y-8">
+        @foreach (['b2c', 'b2b'] as $audience)
+            @continue(empty($audiences[$audience]))
+            {{-- Directives courtes uniquement : un bloc php long, ici, avalerait les directives courtes qui précèdent --}}
+            @php($group = $audiences[$audience])
+            @php($groupInbox = $group->sum('inbox'))
+            @php($groupTotal = $group->sum('total'))
+            @php($groupRate = $groupTotal ? (int) round($groupInbox / $groupTotal * 100) : 0)
+            <section>
+                <div class="flex items-center justify-between gap-2 mb-3">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                        {{ __('messages.results.audience_' . $audience) }}
+                    </h3>
+                    <span class="text-sm text-muted-foreground">
+                        <span class="font-semibold text-foreground tabular-nums">{{ $groupInbox }}/{{ $groupTotal }}</span>
+                        {{ __('messages.results.in_inbox') }} · <span class="tabular-nums">{{ $groupRate }}%</span>
+                    </span>
                 </div>
-            </div>
-        @empty
+                <div class="space-y-3">
+                    @foreach ($group as $row)
+                        @php($tone = match ($row['placement']) {
+                            'inbox' => ['text-emerald-600', 'bg-emerald-50', 'bg-emerald-500', __('messages.results.inbox')],
+                            'spam' => ['text-amber-600', 'bg-amber-50', 'bg-amber-500', __('messages.results.spam')],
+                            'other' => ['text-blue-600', 'bg-blue-50', 'bg-blue-500', __('messages.results.promotions')],
+                            default => ['text-muted-foreground', 'bg-muted', 'bg-muted-foreground/40', __('messages.results.not_received')],
+                        })
+                        <div class="flex items-center gap-4 border border-border rounded-xl p-4 bg-card">
+                            @include('test.partials.provider-icon', ['provider' => $row['provider']])
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <span class="font-medium truncate">{{ $row['provider'] }}</span>
+                                        @include('test.partials.provider-flag', ['provider' => $row['provider']])
+                                    </div>
+                                    <span class="inline-flex items-center gap-1 text-sm font-medium shrink-0 {{ $tone[0] }} {{ $tone[1] }} px-2.5 py-0.5 rounded-full">
+                                        {{ $tone[3] }}
+                                    </span>
+                                </div>
+                                <div class="mt-2 flex items-center gap-3">
+                                    <div class="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                                        <div class="h-full rounded-full {{ $tone[2] }}" style="width: {{ $row['rate'] }}%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium tabular-nums w-12 text-right">{{ $row['rate'] }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+        @endforeach
+        @if (empty($providers))
             <p class="text-sm text-muted-foreground">{{ __('messages.results.not_received') }}</p>
-        @endforelse
+        @endif
     </div>
 </div>
 

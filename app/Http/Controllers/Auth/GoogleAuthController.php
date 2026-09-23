@@ -14,6 +14,9 @@ class GoogleAuthController extends Controller
     {
         return Socialite::driver('google')
             ->scopes(['email', 'profile'])
+            // Laisse choisir le compte : sinon Google reprend le compte actif
+            // du navigateur, souvent une adresse personnelle refusée ensuite.
+            ->with(['prompt' => 'select_account'])
             ->redirect();
     }
 
@@ -37,7 +40,10 @@ class GoogleAuthController extends Controller
             ]);
             
             if (!in_array($emailDomain, $allowedDomains)) {
-                return redirect()->route('home')->with('error', 'Accès non autorisé. Votre domaine email (@' . $emailDomain . ') n\'est pas autorisé.');
+                \Log::warning('Google Auth refused: domain not allowed', ['email' => $googleUser->getEmail()]);
+
+                // Retour sur la page de connexion, qui affiche le motif
+                return redirect()->route('admin.login')->with('error', 'Accès non autorisé. Votre domaine email (@' . $emailDomain . ') n\'est pas autorisé.');
             }
             
             // Créer ou mettre à jour l'utilisateur admin
@@ -102,7 +108,7 @@ class GoogleAuthController extends Controller
             
         } catch (\Exception $e) {
             \Log::error('Google Auth Error: ' . $e->getMessage());
-            return redirect()->route('home')->with('error', 'Erreur lors de l\'authentification Google.');
+            return redirect()->route('admin.login')->with('error', 'Erreur lors de l\'authentification Google.');
         }
     }
 

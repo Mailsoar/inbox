@@ -167,7 +167,13 @@
                                             class="me-2" style="height: 24px;">
                                     @endif
                                     <div>
-                                        <strong>{{ $provider->display_name }}</strong><br>
+                                        <strong>{{ $provider->display_name }}</strong>
+                                        @if ($provider->country)
+                                            <img src="/images/flags/{{ $provider->country }}.svg" alt="{{ strtoupper($provider->country) }}"
+                                                 title="{{ \Locale::getDisplayRegion('-' . strtoupper($provider->country), 'fr') }}"
+                                                 style="height: 12px; margin-left: 4px; vertical-align: baseline; box-shadow: 0 0 0 1px rgba(0,0,0,.1);">
+                                        @endif
+                                        <br>
                                         <small class="text-muted">{{ $provider->name }}</small>
                                     </div>
                                 </div>

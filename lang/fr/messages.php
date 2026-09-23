@@ -110,6 +110,13 @@ return [
     
     // Test creation page
     'test' => [
+        'ring_reveal' => "avant les résultats",
+        'pending_count' => "En attente (:count) : :list",
+        'live_missing' => "Encore :missing boîte(s) et vos résultats s'affichent…",
+        'live_domain_done' => "Diagnostic du domaine d'envoi terminé.",
+        'see_partial_now' => "Voir les résultats partiels maintenant",
+        'reveal_now' => "Affichage des résultats…",
+        'detail_domain_running' => "Vérification SPF, DKIM, DMARC, BIMI et listes noires…",
         'ring_waiting' => "en attente des emails…",
         'refreshing' => "actualisation…",
         'partial_results' => "Résultats partiels — :received boîtes sur :total ont répondu. Cette page se met à jour toute seule à mesure que les autres arrivent.",
@@ -206,6 +213,9 @@ return [
     
     // Results page
     'results' => [
+        'audience_b2c' => 'Particuliers (B2C)',
+        'audience_b2b' => 'Entreprises (B2B)',
+        'in_inbox' => 'en boîte de réception',
         'analysing' => "Analyse en cours",
         'verdict_all_good' => "L'authentification est solide et vos emails atteignent la boîte de réception. Rien à changer.",
         'verdict_placement_weak' => "L'authentification est solide, mais seuls :inbox fournisseurs sur :total ont délivré en boîte de réception. Le placement ne dépend pas que de l'authentification : réputation d'envoi, contenu et qualité de la liste pèsent aussi.",

@@ -5,6 +5,27 @@ namespace App\Services;
 class EmailAuthenticationParser
 {
     /**
+     * En-têtes à lire pour juger l'authentification.
+     *
+     * Quand une passerelle (Proofpoint, Mimecast…) filtre avant la boîte,
+     * le serveur final voit l'IP de la passerelle et un corps réécrit : SPF
+     * et DKIM y échouent à tort. La passerelle conserve alors son propre
+     * verdict, pris à la source, dans Authentication-Results-Original : c'est
+     * lui qui reflète la configuration de l'expéditeur.
+     */
+    public static function edgeHeaders(string $headers): string
+    {
+        $unfolded = preg_replace('/\r?\n[ \t]+/', ' ', $headers);
+
+        if (preg_match('/^Authentication-Results-Original:\s*(.+)$/mi', $unfolded, $m)
+            && preg_match('/\b(spf|dkim|dmarc)=/i', $m[1])) {
+            return 'Authentication-Results: ' . trim($m[1]) . "\n";
+        }
+
+        return $headers;
+    }
+
+    /**
      * Parse authentication results from email headers
      */
     public function parseAuthentication(string $headers): array

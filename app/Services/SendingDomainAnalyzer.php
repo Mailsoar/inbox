@@ -20,8 +20,14 @@ class SendingDomainAnalyzer
 {
     public function analyze(Test $test): array
     {
-        $result = $test->results->first(fn ($r) => ! empty($r->raw_headers))
-            ?? $test->results->first();
+        // Certaines boîtes ne remontent qu'un extrait des en-têtes : on
+        // privilégie un message signé, puis les en-têtes les plus complets.
+        $result = $test->results
+            ->sortByDesc(fn ($r) => [
+                preg_match('/^DKIM-Signature:/mi', (string) $r->raw_headers),
+                strlen((string) $r->raw_headers),
+            ])
+            ->first();
 
         if (! $result) {
             return ['domain' => null, 'analyzed_at' => now()->toIso8601String()];
@@ -100,10 +106,11 @@ class SendingDomainAnalyzer
 
     private function domainOf(?string $email): ?string
     {
-        if (! $email || ! str_contains($email, '@')) {
+        // L'expéditeur peut arriver sous la forme « Nom <adresse> »
+        if (! $email || ! preg_match('/@([A-Za-z0-9.-]+)/', (string) strrchr($email, '@'), $m)) {
             return null;
         }
 
-        return strtolower(trim(substr(strrchr($email, '@'), 1)));
+        return strtolower(rtrim($m[1], '.'));
     }
 }

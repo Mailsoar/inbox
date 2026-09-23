@@ -2,9 +2,9 @@
 
 @section('title')
 @if(app()->getLocale() === 'fr')
-Check — Test gratuit de délivrabilité email par MailSoar
+Inbox — Test gratuit de délivrabilité email par MailSoar
 @else
-Check — Free email inbox placement test by MailSoar
+Inbox — Free email inbox placement test by MailSoar
 @endif
 @endsection
 
@@ -21,7 +21,7 @@ Check — Free email inbox placement test by MailSoar
     // On en cite au plus quatre afin de garder la phrase lisible.
     // Les fournisseurs les plus reconnaissables passent devant : ce sont eux qui
     // rassurent le visiteur, pas les messageries régionales.
-    $priority = ['Gmail', 'Google Workspace', 'Microsoft 365', 'Outlook', 'Yahoo Mail', 'Yahoo'];
+    $priority = ['Gmail', 'Google Workspace', 'Microsoft 365', 'Outlook / Hotmail', 'Outlook', 'Yahoo Mail', 'Yahoo'];
 
     $providerNames = collect($seedList)
         ->pluck('provider')

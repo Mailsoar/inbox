@@ -29,10 +29,14 @@ class RefreshOAuthTokens extends Command
         $this->info('Starting OAuth token refresh...');
         
         $tokenService = new OAuthTokenService();
-        $count = $tokenService->refreshExpiringTokens();
-        
-        $this->info("Refreshed {$count} tokens successfully.");
-        
-        return Command::SUCCESS;
+        $stats = $tokenService->refreshExpiringTokens();
+
+        $this->info("Refreshed {$stats['refreshed']} tokens.");
+
+        foreach ($stats['failed'] as $email => $error) {
+            $this->error("Failed: {$email} — {$error}");
+        }
+
+        return $stats['failed'] ? Command::FAILURE : Command::SUCCESS;
     }
 }

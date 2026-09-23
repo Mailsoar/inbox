@@ -12,7 +12,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Check by MailSoar')</title>
+    <title>@yield('title', 'Inbox by MailSoar')</title>
 
     <link rel="canonical" href="{{ url()->full() }}" />
     <link rel="alternate" hreflang="fr" href="{{ url('/') }}?lang=fr" />
@@ -46,7 +46,7 @@
         <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
             <a href="{{ route('home') }}" class="flex items-center gap-2 font-heading font-bold text-lg tracking-tight">
                 @include('partials.logo', ['class' => 'h-7 w-auto'])
-                <span class="hidden sm:inline">Check</span>
+                <span class="hidden sm:inline">Inbox</span>
             </a>
 
             <div class="flex items-center gap-2">

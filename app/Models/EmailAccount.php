@@ -208,10 +208,17 @@ class EmailAccount extends Model
                     $standardDomains = $domains;
                 }
             }
+
+            // Offre professionnelle ou grand public : le type saisi sur la
+            // boîte fait foi. La liste de domaines ne sert qu'à défaut, car
+            // elle ne peut pas tout couvrir (hotmail.fr, live.fr, outlook.fr…).
+            $isBusiness = in_array($this->account_type, ['b2b', 'b2c'], true)
+                ? $this->account_type === 'b2b'
+                : !in_array($domain, $standardDomains);
             
             // Pour Gmail OAuth avec domaine personnalisé → Google Workspace
             if ($this->provider === 'gmail') {
-                if (!in_array($domain, $standardDomains)) {
+                if ($isBusiness) {
                     return 'Google Workspace';
                 }
                 // Domaine Gmail standard
@@ -220,7 +227,7 @@ class EmailAccount extends Model
             
             // Pour Outlook/Microsoft OAuth avec domaine personnalisé → Microsoft 365
             if ($this->provider === 'outlook' || $this->provider === 'microsoft') {
-                if (!in_array($domain, $standardDomains)) {
+                if ($isBusiness) {
                     // Domaine personnalisé
                     // Si c'est détecté comme Outlook/Hotmail par MX, c'est en fait Microsoft 365
                     if ($detectedProvider === 'Outlook / Hotmail' || $detectedProvider === 'Outlook') {

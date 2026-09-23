@@ -315,24 +315,24 @@ class TestController extends Controller
             ->with(['emailAccounts', 'results'])
             ->firstOrFail();
 
-        $isFinished = in_array($test->status, ['completed', 'timeout', 'cancelled'], true)
-            || $test->isComplete()
-            || $test->isTimedOut();
+        $isFinished = $test->isFinished();
 
-        // Dès qu'un seul résultat est disponible, on le montre : inutile de
-        // retenir le visiteur jusqu'au terme du délai. La page continue de se
-        // rafraîchir tant que d'autres réponses peuvent arriver.
+        // On attend que les résultats soient représentatifs (seuil de boîtes
+        // ou délai depuis le lancement du test) avant de les afficher. Le
+        // visiteur peut toutefois demander à voir les résultats partiels.
+        $showResults = $test->resultsReady()
+            || ($request->boolean('partial') && $test->results->isNotEmpty());
+
         return view('test.track', [
             'test' => $test,
             'isFinished' => $isFinished,
-            'hasResults' => $test->results->isNotEmpty(),
-            'analysis' => app(\App\Services\ComplianceScoreService::class)->analyze($test),
+            'hasResults' => $showResults,
+            'analysis' => $showResults ? app(\App\Services\ComplianceScoreService::class)->analyze($test) : null,
             // Diagnostic du domaine d'envoi, figé au moment du test
             'dns' => $test->domain_analysis ?? [],
             // Le diagnostic tourne en arrière-plan : tant qu'il n'a pas rendu
             // sa copie, les cartes s'affichent en attente plutôt qu'à vide.
-            'analysisPending' => $test->results->isNotEmpty() && $test->domain_analyzed_at === null,
-            'secondsLeft' => $test->timeout_at ? max(0, (int) now()->diffInSeconds($test->timeout_at, false)) : 0,
+            'analysisPending' => $showResults && $test->domain_analyzed_at === null,
         ]);
     }
 
@@ -346,9 +346,8 @@ class TestController extends Controller
             ->with(['emailAccounts', 'results'])
             ->firstOrFail();
 
-        $isFinished = in_array($test->status, ['completed', 'timeout', 'cancelled'], true)
-            || $test->isComplete()
-            || $test->isTimedOut();
+        $isFinished = $test->isFinished();
+        $revealAt = $test->revealAt();
 
         $accounts = $test->emailAccounts->map(function ($account) use ($test) {
             $result = $test->results->firstWhere('email_account_id', $account->id);
@@ -375,6 +374,10 @@ class TestController extends Controller
             // Permet à la page de résultats de savoir quand le diagnostic DNS
             // est disponible, pour se recharger au bon moment.
             'domain_analyzed' => $test->domain_analyzed_at !== null,
+            // Bascule vers les résultats : seuil de réponses ou délai écoulé
+            'results_ready' => $test->resultsReady(),
+            'reveal_threshold' => $test->revealThreshold(),
+            'reveal_in' => max(0, (int) now()->diffInSeconds($revealAt, false)),
             'results_url' => route('test.results', $test->unique_id),
         ];
 

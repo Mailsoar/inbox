@@ -116,6 +116,51 @@ class Test extends Model
         return $this->expires_at->isPast();
     }
 
+    public function isFinished(): bool
+    {
+        return in_array($this->status, ['completed', 'timeout', 'cancelled'], true)
+            || $this->isTimedOut();
+    }
+
+    /**
+     * Nombre de réponses à partir duquel les résultats sont assez
+     * représentatifs pour être affichés sans attendre les retardataires.
+     */
+    public function revealThreshold(): int
+    {
+        $ratio = (float) config('mailsoar.results_reveal_ratio', 0.8);
+
+        return max(1, (int) ceil($this->emailAccounts->count() * $ratio));
+    }
+
+    /**
+     * Moment où les résultats seront affichés même si le seuil n'est pas
+     * atteint : un délai fixe compté depuis le lancement du test.
+     */
+    public function revealAt(): \Illuminate\Support\Carbon
+    {
+        return $this->created_at->copy()->addSeconds((int) config('mailsoar.results_reveal_delay_seconds', 120));
+    }
+
+    /**
+     * Les résultats sont affichés quand le test est clos, quand assez de
+     * boîtes ont répondu, ou quand le délai depuis le lancement du test
+     * est écoulé.
+     */
+    public function resultsReady(): bool
+    {
+        if ($this->isFinished()) {
+            return true;
+        }
+
+        if ($this->results->isEmpty()) {
+            return false;
+        }
+
+        return $this->results->count() >= $this->revealThreshold()
+            || $this->revealAt()->isPast();
+    }
+
     public function updateProgress(): void
     {
         $receivedCount = $this->emailAccounts()

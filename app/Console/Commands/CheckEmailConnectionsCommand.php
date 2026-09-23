@@ -7,6 +7,7 @@ use App\Services\EmailServiceFactory;
 use App\Services\LoggerService;
 use App\Services\OAuthTokenService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ConnectionErrorAlert;
 use Carbon\Carbon;
@@ -78,7 +79,12 @@ class CheckEmailConnectionsCommand extends Command
                         $successCount++;
                         continue; // Skip the rest, account is now working
                     } else {
-                        $this->error("  ❌ Automatic repair failed");
+                        // Le motif réel (ex. identifiants d'application absents)
+                        // vaut mieux que « Unknown connection error ».
+                        if ($oauthService->lastError) {
+                            $errorMessage = $oauthService->lastError;
+                        }
+                        $this->error("  ❌ Automatic repair failed: {$errorMessage}");
                         $this->logger->warning("Automatic repair failed", ['email' => $account->email]);
                     }
                 }
@@ -144,12 +150,19 @@ class CheckEmailConnectionsCommand extends Command
             'count' => count($failedAccounts)
         ]);
         
-        // Get admin emails from config
-        $adminEmails = explode(',', env('ADMIN_ALERT_EMAILS', env('ADMIN_EMAIL', '')));
-        $adminEmails = array_filter(array_map('trim', $adminEmails));
-        
+        $adminEmails = array_filter(array_map('trim', explode(',', (string) config('mailsoar.alert_emails'))));
+
         if (empty($adminEmails)) {
-            $this->logger->warning("No admin emails configured for alerts");
+            $this->logger->error("No admin emails configured for alerts (ADMIN_ALERT_EMAILS)");
+            $this->warn("No alert recipients configured (ADMIN_ALERT_EMAILS)");
+            return;
+        }
+
+        // La vérification tourne toutes les 20 minutes : on n'alerte que si
+        // la liste des comptes en échec change, ou au plus toutes les 6 heures.
+        $signature = collect($failedAccounts)->map(fn ($f) => $f['account']->email)->sort()->implode(',');
+        if (Cache::get('connection-alert:last') === $signature) {
+            $this->logger->info("Alert already sent for these accounts, skipping");
             return;
         }
         
@@ -166,6 +179,7 @@ class CheckEmailConnectionsCommand extends Command
                 Mail::to($adminEmail)->send(new ConnectionErrorAlert($alertData));
             }
             
+            Cache::put('connection-alert:last', $signature, now()->addHours(6));
             $this->logger->info("Alert emails sent successfully");
         } catch (\Exception $e) {
             $this->logger->error("Failed to send alert email", [

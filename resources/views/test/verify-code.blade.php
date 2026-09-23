@@ -1,6 +1,6 @@
 @extends('layouts.public')
 
-@section('title', __('messages.verification.title') . ' - Check')
+@section('title', __('messages.verification.title') . ' - Inbox by MailSoar')
 
 @section('meta')
 <meta name="robots" content="noindex, nofollow">

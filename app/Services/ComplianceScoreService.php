@@ -335,13 +335,18 @@ class ComplianceScoreService
      * adresse : ce qui intéresse l'expéditeur, c'est le comportement de Gmail
      * ou de Microsoft, pas celui d'une boîte en particulier.
      *
-     * @return array<int, array{provider:string, total:int, received:int, inbox:int, spam:int, other:int, rate:int, placement:string}>
+     * Chaque ligne porte son audience (b2c / b2b, d'après le type saisi sur
+     * les boîtes) : le filtrage grand public et professionnel diffère, les
+     * résultats sont donc présentés en deux groupes.
+     *
+     * @return array<int, array{provider:string, audience:string, total:int, received:int, inbox:int, spam:int, other:int, rate:int, placement:string}>
      */
     public function byProvider(Test $test): array
     {
         return $test->emailAccounts
-            ->groupBy(fn ($account) => $account->getRealProvider())
-            ->map(function ($accounts, $provider) use ($test) {
+            ->groupBy(fn ($account) => self::audienceOf($account) . '|' . $account->getRealProvider())
+            ->map(function ($accounts, $key) use ($test) {
+                [$audience, $provider] = explode('|', $key, 2);
                 $ids = $accounts->pluck('id');
                 $rows = $test->results->whereIn('email_account_id', $ids);
 
@@ -356,6 +361,7 @@ class ComplianceScoreService
 
                 return [
                     'provider' => $provider,
+                    'audience' => $audience,
                     'total' => $total,
                     'received' => $rows->count(),
                     'inbox' => $inbox,
@@ -373,6 +379,12 @@ class ComplianceScoreService
             ->sortByDesc('rate')
             ->values()
             ->all();
+    }
+
+    /** Audience d'une boîte ; à défaut de type saisi, grand public. */
+    public static function audienceOf($account): string
+    {
+        return $account->account_type === 'b2b' ? 'b2b' : 'b2c';
     }
 
     /** Répartition du placement, et décompte des boîtes ayant reçu. */

@@ -214,7 +214,7 @@ class EmailProcessingOrchestrator
         
         // Utiliser le nouveau parser pour l'authentification
         $parser = new EmailAuthenticationParser();
-        $authInfo = $parser->parseAuthentication($emailData['headers'] ?? '');
+        $authInfo = $parser->parseAuthentication(EmailAuthenticationParser::edgeHeaders($emailData['headers'] ?? ''));
         
         // Extraire l'IP et le hostname
         $sendingIp = $parser->extractSendingIP($emailData['headers'] ?? '');
