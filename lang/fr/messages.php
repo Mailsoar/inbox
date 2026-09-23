@@ -110,6 +110,8 @@ return [
     
     // Test creation page
     'test' => [
+        'watching_for' => "Vérification des boîtes encore",
+        'watching_hint' => "Les boîtes de test sont vérifiées jusqu'à 30 minutes après le lancement : les emails en retard s'ajouteront automatiquement.",
         'ring_reveal' => "avant les résultats",
         'pending_count' => "En attente (:count) : :list",
         'live_missing' => "Encore :missing boîte(s) et vos résultats s'affichent…",
@@ -213,6 +215,10 @@ return [
     
     // Results page
     'results' => [
+        'data_unavailable' => "Donnée non disponible",
+        'unavailable_no_email' => "Aucun email reçu pour l'instant : ce contrôle sera évalué dès qu'un email arrivera.",
+        'unavailable_no_data' => "Aucune boîte de réception n'a remonté ce contrôle pour ce test.",
+        'verdict_no_data' => "Aucun email reçu pour l'instant : le score sera calculé dès qu'un email arrivera.",
         'audience_b2c' => 'Particuliers (B2C)',
         'audience_b2b' => 'Entreprises (B2B)',
         'in_inbox' => 'en boîte de réception',

@@ -64,7 +64,16 @@
 
     <footer class="mt-16 border-t border-border/60 py-8">
         <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
-            <p>&copy; {{ date('Y') }} MailSoar</p>
+            <p>
+                &copy; {{ date('Y') }} ·
+                {{ __('messages.footer.made_with') }}
+                <svg viewBox="0 0 24 24" aria-label="love" role="img"
+                     style="display: inline-block; width: 14px; height: 14px; vertical-align: -2px; margin: 0 2px; fill: #e11d48">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                {{ __('messages.footer.by') }}
+                <a href="https://www.mailsoar.com" class="font-medium hover:text-foreground transition-colors" rel="noopener" target="_blank">MailSoar</a>
+            </p>
             <div class="flex items-center gap-4">
                 <a href="https://www.mailsoar.com" class="hover:text-foreground transition-colors" rel="noopener" target="_blank">mailsoar.com</a>
                 {{-- Accès à l'administration : présent mais effacé, il n'a rien

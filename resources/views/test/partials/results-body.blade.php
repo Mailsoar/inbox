@@ -3,6 +3,11 @@
     $checks = $analysis['checks'];
     $providers = $analysis['providers'];
 
+    // Motif affiché sur les contrôles sans donnée
+    $unavailableReason = $placement['received'] === 0
+        ? __('messages.results.unavailable_no_email')
+        : __('messages.results.unavailable_no_data');
+
     $gradeColor = [
         'A' => '#10b981', 'B' => '#f59e0b', 'C' => '#f97316', 'D' => '#f97316', 'F' => '#ef4444',
     ][$analysis['grade'] ?? ''] ?? 'hsl(var(--accent))';
@@ -23,187 +28,207 @@
     ];
 @endphp
 
-@if ($analysis['score'] !== null)
-    {{-- Score de conformité et placement global --}}
-    <div class="card p-6 grid sm:grid-cols-[auto_1fr] gap-6 items-center">
-        @include('test.partials.score-gauge', [
-            'score' => $analysis['score'],
-            'grade' => $analysis['grade'],
-            'color' => $gradeColor,
-        ])
-        <div>
-            <div class="text-sm font-medium text-muted-foreground mb-1">{{ __('messages.results.inbox_placement') }}</div>
-            <div class="text-3xl font-bold font-heading">
-                {{ $placement['inbox'] }}/{{ $placement['total'] }} {{ __('messages.results.inbox') }}
-            </div>
-            @php
-                // Le constat doit désigner ce qui tire la note vers le bas :
-                // dire « l'authentification a échoué » quand elle est parfaite
-                // et que c'est le placement qui pèche décrédibilise le reste.
-                $authScore = $analysis['auth_score'] ?? null;
-                $placementScore = $analysis['placement_score'] ?? null;
-                $good = 75;
+{{-- Toutes les sections restent visibles : sans donnée, elles le disent
+     plutôt que de disparaître. --}}
 
-                $verdictKey = match (true) {
-                    $authScore === null || $placementScore === null => 'verdict_partial',
-                    $authScore >= $good && $placementScore >= $good => 'verdict_all_good',
-                    $authScore >= $good => 'verdict_placement_weak',
-                    $placementScore >= $good => 'verdict_auth_weak',
-                    default => 'verdict_both_weak',
-                };
-            @endphp
+{{-- Score de conformité et placement global --}}
+<div class="card p-6 grid sm:grid-cols-[auto_1fr] gap-6 items-center">
+    @include('test.partials.score-gauge', [
+        'score' => $analysis['score'],
+        'grade' => $analysis['grade'],
+        'color' => $gradeColor,
+    ])
+    <div>
+        <div class="text-sm font-medium text-muted-foreground mb-1">{{ __('messages.results.inbox_placement') }}</div>
+        <div class="text-3xl font-bold font-heading">
+            {{ $placement['inbox'] }}/{{ $placement['total'] }} {{ __('messages.results.inbox') }}
+        </div>
+        @php
+            // Le constat doit désigner ce qui tire la note vers le bas :
+            // dire « l'authentification a échoué » quand elle est parfaite
+            // et que c'est le placement qui pèche décrédibilise le reste.
+            $authScore = $analysis['auth_score'] ?? null;
+            $placementScore = $analysis['placement_score'] ?? null;
+            $good = 75;
 
-            <p class="text-sm text-muted-foreground mt-2">
-                {{ __("messages.results.{$verdictKey}", [
-                    'inbox' => $placement['inbox'],
-                    'total' => $placement['total'],
-                ]) }}
-            </p>
+            $verdictKey = match (true) {
+                $analysis['score'] === null => 'verdict_no_data',
+                $authScore === null || $placementScore === null => 'verdict_partial',
+                $authScore >= $good && $placementScore >= $good => 'verdict_all_good',
+                $authScore >= $good => 'verdict_placement_weak',
+                $placementScore >= $good => 'verdict_auth_weak',
+                default => 'verdict_both_weak',
+            };
+        @endphp
 
-            {{-- Les deux composantes du score, pour que la note soit lisible --}}
-            @php
-                // Teinte calculée ici : un ternaire imbriqué dans un @php(...)
-                // en ligne casse l'analyseur de Blade.
-                $components = [];
-                foreach ([
-                    'placement_component' => ['placement_score', 'placement_grade'],
-                    'auth_component' => ['auth_score', 'auth_grade'],
-                ] as $labelKey => [$scoreKey, $gradeKey]) {
-                    $value = $analysis[$scoreKey] ?? null;
+        <p class="text-sm text-muted-foreground mt-2">
+            {{ __("messages.results.{$verdictKey}", [
+                'inbox' => $placement['inbox'],
+                'total' => $placement['total'],
+            ]) }}
+        </p>
 
-                    if ($value === null) {
-                        continue;
-                    }
+        {{-- Les deux composantes du score, pour que la note soit lisible --}}
+        @php
+            // Teinte calculée ici : un ternaire imbriqué dans un @php(...)
+            // en ligne casse l'analyseur de Blade.
+            $components = [];
+            foreach ([
+                'placement_component' => ['placement_score', 'placement_grade'],
+                'auth_component' => ['auth_score', 'auth_grade'],
+            ] as $labelKey => [$scoreKey, $gradeKey]) {
+                $value = $analysis[$scoreKey] ?? null;
 
-                    $grade = $analysis[$gradeKey] ?? null;
-
-                    $components[] = [
-                        'label' => __("messages.results.{$labelKey}"),
-                        'grade' => $grade,
-                        'score' => $value,
-                        // Même palette que la jauge principale, pour que les
-                        // trois notes se lisent sur la même échelle.
-                        'color' => $gradeColor === null ? null : ([
-                            'A' => '#10b981', 'B' => '#f59e0b', 'C' => '#f97316',
-                            'D' => '#f97316', 'F' => '#ef4444',
-                        ][$grade] ?? 'hsl(var(--accent))'),
-                    ];
+                if ($value === null) {
+                    continue;
                 }
-            @endphp
 
-            @if ($components !== [])
-                <div class="mt-4 grid grid-cols-2 gap-3">
-                    @foreach ($components as $component)
-                        <div class="rounded-lg border border-border bg-background px-3 py-3">
-                            @include('test.partials.score-badge', [
-                                'score' => $component['score'],
-                                'grade' => $component['grade'],
-                                'color' => $component['color'],
-                                'label' => $component['label'],
-                            ])
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-        </div>
-    </div>
+                $grade = $analysis[$gradeKey] ?? null;
 
-    {{-- Parler à un expert --}}
-    <div class="border border-primary/20 rounded-2xl p-6 bg-primary/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div class="flex items-start gap-3">
-            <div class="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                </svg>
-            </div>
-            <div>
-                <h3 class="font-semibold text-lg">{{ __('messages.results.expert_title') }}</h3>
-                <p class="text-sm text-muted-foreground mt-1 max-w-md">{{ __('messages.results.expert_desc') }}</p>
-            </div>
-        </div>
-        {{-- Le href reste fonctionnel si le script Calendly ne charge pas --}}
-        <a href="{{ config('mailsoar.expert_booking_url') }}" target="_blank" rel="noopener noreferrer"
-           data-calendly class="btn-primary btn-lg gap-2 shrink-0">
-            {{ __('messages.results.expert_cta') }}
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-            </svg>
-        </a>
-    </div>
+                $components[] = [
+                    'label' => __("messages.results.{$labelKey}"),
+                    'grade' => $grade,
+                    'score' => $value,
+                    // Même palette que la jauge principale, pour que les
+                    // trois notes se lisent sur la même échelle.
+                    'color' => $gradeColor === null ? null : ([
+                        'A' => '#10b981', 'B' => '#f59e0b', 'C' => '#f97316',
+                        'D' => '#f97316', 'F' => '#ef4444',
+                    ][$grade] ?? 'hsl(var(--accent))'),
+                ];
+            }
+        @endphp
 
-    {{-- Conformité technique : SPF, DKIM, DMARC --}}
-    @php
-        $mainChecks = collect(['spf' => 'SPF', 'dkim' => 'DKIM', 'dmarc' => 'DMARC'])
-            ->filter(fn ($label, $key) => ($checks[$key]['total'] ?? 0) > 0);
-
-        // Chaque recommandation rejoint la carte du mécanisme qu'elle concerne :
-        // elle y est bien plus lisible qu'isolée en bas de page.
-        $recoByKey = collect($analysis['recommendations'] ?? [])->keyBy('key');
-    @endphp
-
-    @if ($mainChecks->isNotEmpty())
-        <div>
-            <h2 class="font-semibold text-lg mb-4">{{ __('messages.results.technical_compliance') }}</h2>
-
-            {{-- Une carte par mécanisme, pleine largeur : plus de place pour le détail --}}
-            <div class="space-y-4">
-                @foreach ($mainChecks as $key => $label)
-                    @if ($analysisPending ?? false)
-                        @include('test.partials.compliance-card-pending', [
-                            'label' => $label,
-                            'description' => __("messages.results.{$key}_full"),
-                            'icon' => $authIcons[$key],
+        @if ($components !== [])
+            <div class="mt-4 grid grid-cols-2 gap-3">
+                @foreach ($components as $component)
+                    <div class="rounded-lg border border-border bg-background px-3 py-3">
+                        @include('test.partials.score-badge', [
+                            'score' => $component['score'],
+                            'grade' => $component['grade'],
+                            'color' => $component['color'],
+                            'label' => $component['label'],
                         ])
-                        @continue
-                    @endif
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
+</div>
 
-                    @include('test.partials.compliance-card', [
-                        'check' => $checks[$key],
+{{-- Parler à un expert --}}
+<div class="border border-primary/20 rounded-2xl p-6 bg-primary/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+        </div>
+        <div>
+            <h3 class="font-semibold text-lg">{{ __('messages.results.expert_title') }}</h3>
+            <p class="text-sm text-muted-foreground mt-1 max-w-md">{{ __('messages.results.expert_desc') }}</p>
+        </div>
+    </div>
+    {{-- Le href reste fonctionnel si le script Calendly ne charge pas --}}
+    <a href="{{ config('mailsoar.expert_booking_url') }}" target="_blank" rel="noopener noreferrer"
+       data-calendly class="btn-primary btn-lg gap-2 shrink-0">
+        {{ __('messages.results.expert_cta') }}
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+        </svg>
+    </a>
+</div>
+
+{{-- Conformité technique : SPF, DKIM, DMARC --}}
+@php
+    $mainChecks = collect(['spf' => 'SPF', 'dkim' => 'DKIM', 'dmarc' => 'DMARC']);
+
+    // Chaque recommandation rejoint la carte du mécanisme qu'elle concerne :
+    // elle y est bien plus lisible qu'isolée en bas de page.
+    $recoByKey = collect($analysis['recommendations'] ?? [])->keyBy('key');
+@endphp
+
+@if ($mainChecks->isNotEmpty())
+    <div>
+        <h2 class="font-semibold text-lg mb-4">{{ __('messages.results.technical_compliance') }}</h2>
+
+        {{-- Une carte par mécanisme, pleine largeur : plus de place pour le détail --}}
+        <div class="space-y-4">
+            @foreach ($mainChecks as $key => $label)
+                @if ($analysisPending ?? false)
+                    @include('test.partials.compliance-card-pending', [
                         'label' => $label,
                         'description' => __("messages.results.{$key}_full"),
                         'icon' => $authIcons[$key],
-                        'dns' => $dns[$key] ?? null,
-                        'dnsKey' => $key,
-                        'recommendation' => $recoByKey[$key] ?? null,
                     ])
-                @endforeach
-            </div>
+                    @continue
+                @endif
 
-            {{-- BIMI, facultatif, à la suite --}}
-            @php($bimiDns = $dns['bimi'] ?? null)
-            @if ($analysisPending ?? false)
-                <div class="mt-4">
-                    @include('test.partials.compliance-card-pending', [
-                        'label' => 'BIMI',
-                        'description' => __('messages.results.bimi_full'),
-                        'icon' => $authIcons['bimi'],
+                @if (($checks[$key]['total'] ?? 0) === 0)
+                    @include('test.partials.compliance-card-unavailable', [
+                        'label' => $label,
+                        'description' => __("messages.results.{$key}_full"),
+                        'icon' => $authIcons[$key],
+                        'reason' => $unavailableReason,
                     ])
-                </div>
-            @elseif ($bimiDns)
-                @php($bimiCheck = [
-                    'status' => ! empty($bimiDns['configured'])
-                        ? (collect($bimiDns['findings'] ?? [])->contains(fn ($f) => $f['level'] === 'error') ? 'fail' : 'pass')
-                        : 'none',
-                    'ratio' => ! empty($bimiDns['configured']) ? 1 : 0,
-                    'passed' => ! empty($bimiDns['configured']) ? 1 : 0,
-                    'total' => 1,
+                    @continue
+                @endif
+
+                @include('test.partials.compliance-card', [
+                    'check' => $checks[$key],
+                    'label' => $label,
+                    'description' => __("messages.results.{$key}_full"),
+                    'icon' => $authIcons[$key],
+                    'dns' => $dns[$key] ?? null,
+                    'dnsKey' => $key,
+                    'recommendation' => $recoByKey[$key] ?? null,
                 ])
-                <div class="mt-4">
-                    @include('test.partials.compliance-card', [
-                        'check' => $bimiCheck,
-                        'label' => 'BIMI',
-                        'description' => __('messages.results.bimi_full'),
-                        'icon' => $authIcons['bimi'],
-                        'optional' => true,
-                        'dns' => $bimiDns,
-                        'dnsKey' => 'bimi',
-                        'logoUrl' => empty($bimiDns['findings']) && ! empty($bimiDns['logo_url']) ? $bimiDns['logo_url'] : null,
-                        'recommendation' => $recoByKey['bimi'] ?? null,
-                    ])
-                </div>
-            @endif
+            @endforeach
         </div>
-    @endif
+
+        {{-- BIMI, facultatif, à la suite --}}
+        @php($bimiDns = $dns['bimi'] ?? null)
+        @if ($analysisPending ?? false)
+            <div class="mt-4">
+                @include('test.partials.compliance-card-pending', [
+                    'label' => 'BIMI',
+                    'description' => __('messages.results.bimi_full'),
+                    'icon' => $authIcons['bimi'],
+                ])
+            </div>
+        @elseif ($bimiDns)
+            @php($bimiCheck = [
+                'status' => ! empty($bimiDns['configured'])
+                    ? (collect($bimiDns['findings'] ?? [])->contains(fn ($f) => $f['level'] === 'error') ? 'fail' : 'pass')
+                    : 'none',
+                'ratio' => ! empty($bimiDns['configured']) ? 1 : 0,
+                'passed' => ! empty($bimiDns['configured']) ? 1 : 0,
+                'total' => 1,
+            ])
+            <div class="mt-4">
+                @include('test.partials.compliance-card', [
+                    'check' => $bimiCheck,
+                    'label' => 'BIMI',
+                    'description' => __('messages.results.bimi_full'),
+                    'icon' => $authIcons['bimi'],
+                    'optional' => true,
+                    'dns' => $bimiDns,
+                    'dnsKey' => 'bimi',
+                    'logoUrl' => empty($bimiDns['findings']) && ! empty($bimiDns['logo_url']) ? $bimiDns['logo_url'] : null,
+                    'recommendation' => $recoByKey['bimi'] ?? null,
+                ])
+            </div>
+        @else
+            <div class="mt-4">
+                @include('test.partials.compliance-card-unavailable', [
+                    'label' => 'BIMI',
+                    'description' => __('messages.results.bimi_full'),
+                    'icon' => $authIcons['bimi'],
+                    'reason' => $unavailableReason,
+                ])
+            </div>
+        @endif
+    </div>
 @endif
 
 {{-- Placement par fournisseur, en deux groupes : le filtrage grand public

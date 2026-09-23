@@ -140,7 +140,14 @@
                         'total' => $test->emailAccounts->count(),
                     ]) }}
                 </span>
-                <span data-refresh-note class="text-xs text-muted-foreground shrink-0"></span>
+                {{-- Les boîtes restent surveillées jusqu'à l'expiration du test --}}
+                <span class="text-xs text-muted-foreground shrink-0 text-right" title="{{ __('messages.test.watching_hint') }}">
+                    <span data-refresh-note></span>
+                    <span data-watch>
+                        {{ __('messages.test.watching_for') }}
+                        <span data-watch-clock class="font-mono tabular-nums">--:--</span>
+                    </span>
+                </span>
             </div>
         @endif
 
@@ -297,6 +304,8 @@
     $jsConfig = [
         'statusUrl' => route('test.status', $test->unique_id),
         'knownResults' => $test->results->count(),
+        // Secondes avant l'expiration du test, qui clôt la surveillance des boîtes
+        'timeoutLeft' => $test->timeout_at ? max(0, (int) now()->diffInSeconds($test->timeout_at, false)) : 0,
         'threshold' => $test->revealThreshold(),
         'revealDelay' => (int) config('mailsoar.results_reveal_delay_seconds', 120),
         'revealIn' => max(0, (int) now()->diffInSeconds($test->revealAt(), false)),
@@ -325,6 +334,18 @@
 
     if (CFG.showingResults) {
         const note = document.querySelector('[data-refresh-note]');
+        const watch = document.querySelector('[data-watch]');
+        const watchClock = document.querySelector('[data-watch-clock]');
+        let watchLeft = CFG.timeoutLeft;
+
+        function watchTick() {
+            if (!watchClock) return;
+            const s = Math.max(0, watchLeft);
+            watchClock.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+            if (watchLeft > 0) watchLeft -= 1;
+        }
+        watchTick();
+        setInterval(watchTick, 1000);
 
         setInterval(async function () {
             let data;
@@ -335,8 +356,11 @@
                 return;
             }
 
+            if (data.seconds_left !== null) watchLeft = data.seconds_left;
+
             // Une réponse de plus, ou le test qui se clôt : on réaffiche
             if (data.received > CFG.knownResults || data.is_finished) {
+                if (watch) watch.classList.add('hidden');
                 if (note) note.textContent = T.refreshing;
                 window.location.reload();
             }
@@ -387,8 +411,8 @@
         ring.style.strokeDashoffset = RING * (1 - Math.min(1, Math.max(0, elapsed)));
 
         if (!live || live.received === 0) {
-            // Rien reçu : les résultats attendront le premier email, même
-            // une fois le délai écoulé.
+            // Rien reçu pour l'instant ; à zéro, la page bascule quand même
+            // sur les résultats.
             say(T.statuses[0]);
         } else if (live) {
             // Les messages du moment défilent : boîtes manquantes, diagnostic…

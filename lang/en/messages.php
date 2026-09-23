@@ -110,6 +110,8 @@ return [
     
     // Test creation page
     'test' => [
+        'watching_for' => "Still checking mailboxes for",
+        'watching_hint' => "Test mailboxes are checked for up to 30 minutes after launch: late emails will be added automatically.",
         'ring_reveal' => "until your results",
         'pending_count' => "Still waiting (:count): :list",
         'live_missing' => ":missing more mailbox(es) and your results will show…",
@@ -213,6 +215,10 @@ return [
     
     // Results page
     'results' => [
+        'data_unavailable' => "Data not available",
+        'unavailable_no_email' => "No email received yet: this check will be evaluated as soon as one arrives.",
+        'unavailable_no_data' => "No mailbox reported this check for this test.",
+        'verdict_no_data' => "No email received yet: the score will be calculated as soon as one arrives.",
         'audience_b2c' => 'Consumers (B2C)',
         'audience_b2b' => 'Businesses (B2B)',
         'in_inbox' => 'in inbox',

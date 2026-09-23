@@ -145,7 +145,7 @@ class Test extends Model
     /**
      * Les résultats sont affichés quand le test est clos, quand assez de
      * boîtes ont répondu, ou quand le délai depuis le lancement du test
-     * est écoulé.
+     * est écoulé, même sans aucun email reçu.
      */
     public function resultsReady(): bool
     {
@@ -153,12 +153,10 @@ class Test extends Model
             return true;
         }
 
-        if ($this->results->isEmpty()) {
-            return false;
-        }
-
-        return $this->results->count() >= $this->revealThreshold()
-            || $this->revealAt()->isPast();
+        // Délai écoulé : on affiche les résultats même si rien n'est arrivé,
+        // plutôt que de laisser le visiteur face à un compteur à zéro.
+        return $this->revealAt()->isPast()
+            || $this->results->count() >= $this->revealThreshold();
     }
 
     public function updateProgress(): void

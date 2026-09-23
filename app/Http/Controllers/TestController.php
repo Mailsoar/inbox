@@ -332,7 +332,8 @@ class TestController extends Controller
             'dns' => $test->domain_analysis ?? [],
             // Le diagnostic tourne en arrière-plan : tant qu'il n'a pas rendu
             // sa copie, les cartes s'affichent en attente plutôt qu'à vide.
-            'analysisPending' => $showResults && $test->domain_analyzed_at === null,
+            // Sans email reçu, le diagnostic n'a pas démarré : rien à attendre.
+            'analysisPending' => $showResults && $test->results->isNotEmpty() && $test->domain_analyzed_at === null,
         ]);
     }
 
