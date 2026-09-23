@@ -21,9 +21,10 @@
 
     @yield('meta')
 
-    <link rel="icon" href="https://www.mailsoar.com/wp-content/uploads/2021/03/cropped-favicon-32x32-1-32x32.png" sizes="32x32" />
-    <link rel="icon" href="https://www.mailsoar.com/wp-content/uploads/2021/03/cropped-favicon-32x32-1-192x192.png" sizes="192x192" />
-    <link rel="apple-touch-icon" href="https://www.mailsoar.com/wp-content/uploads/2021/03/cropped-favicon-32x32-1-180x180.png" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/favicon-192x192.png" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
