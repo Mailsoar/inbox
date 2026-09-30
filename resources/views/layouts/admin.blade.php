@@ -238,6 +238,14 @@
                         </a>
                         @endif
                         
+                        @if(auth('admin')->user() && auth('admin')->user()->hasPermission('view_all'))
+                        <a class="nav-link {{ request()->routeIs('admin.newsletter.*') ? 'active' : '' }}" 
+                           href="{{ route('admin.newsletter.index') }}">
+                            <i class="fas fa-envelope-open-text"></i>
+                            Newsletter
+                        </a>
+                        @endif
+                        
                         @if(auth('admin')->user() && auth('admin')->user()->hasPermission('view_logs'))
                         <a class="nav-link {{ request()->routeIs('admin.queue.*') ? 'active' : '' }}" 
                            href="{{ route('admin.queue.index') }}">

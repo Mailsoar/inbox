@@ -158,6 +158,7 @@ class TestController extends Controller
             $validator = Validator::make($request->all(), [
                 'visitor_email' => ['required', 'email', 'max:255', new ValidEmailProvider()],
                 'audience_type' => 'required|in:b2c,b2b,mixed',
+                'marketing_consent' => 'nullable|boolean',
             ]);
 
             if ($validator->fails()) {
@@ -224,6 +225,7 @@ class TestController extends Controller
                     'visitor_email' => $email,
                     'visitor_ip' => $ip,
                     'audience_type' => $audienceType,
+                    'marketing_consent' => $request->boolean('marketing_consent'),
                     'test_size' => min(config('mailsoar.default_test_size', 25), $accountCount),
                     // Identifiant déjà montré au visiteur, qui l'a inséré dans son email
                     'unique_id' => session('reserved_test_id'),

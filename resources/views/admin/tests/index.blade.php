@@ -190,11 +190,6 @@
                                                 <i class="fas fa-check"></i> OK
                                             </span>
                                         @endif
-                                        @foreach($visitor['audience_types'] as $type)
-                                            <span class="badge bg-{{ $type === 'b2b' ? 'info' : 'secondary' }} small">
-                                                {{ strtoupper($type) }}
-                                            </span>
-                                        @endforeach
                                     </td>
                                 </tr>
                                 @empty
@@ -283,7 +278,7 @@
                             <tr>
                                 <th>Test ID</th>
                                 <th>Visiteur</th>
-                                <th>Type</th>
+                                <th>Communications</th>
                                 <th>Statut</th>
                                 <th>Progression</th>
                                 <th>Authentification</th>
@@ -312,9 +307,14 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-light text-dark">
-                                        {{ strtoupper($test->audience_type) }}
-                                    </span>
+                                    @if($test->marketing_consent)
+                                        <span class="badge bg-success" data-bs-toggle="tooltip"
+                                              title="Accepté le {{ $test->marketing_consent_at?->format('Y-m-d H:i') }}">
+                                            <i class="fas fa-check"></i> Oui
+                                        </span>
+                                    @else
+                                        <span class="badge bg-light text-muted">Non</span>
+                                    @endif
                                 </td>
                                 <td>
                                     <span class="badge 

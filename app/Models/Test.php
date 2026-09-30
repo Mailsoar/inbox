@@ -28,6 +28,8 @@ class Test extends Model
         'sending_domain',
         'domain_analysis',
         'domain_analyzed_at',
+        'marketing_consent',
+        'marketing_consent_at',
     ];
 
     protected $casts = [
@@ -37,6 +39,8 @@ class Test extends Model
         'expires_at' => 'datetime',
         'domain_analysis' => 'array',
         'domain_analyzed_at' => 'datetime',
+        'marketing_consent' => 'boolean',
+        'marketing_consent_at' => 'datetime',
     ];
 
     protected static function boot()

@@ -36,6 +36,8 @@ class TestService
                 'language' => $data['language'] ?? app()->getLocale() ?? 'fr',
                 'timeout_at' => now()->addMinutes(config('mailsoar.email_check_timeout_minutes', 30)),
                 'expires_at' => now()->addDays(7),
+                'marketing_consent' => $consent = (bool) ($data['marketing_consent'] ?? false),
+                'marketing_consent_at' => $consent ? now() : null,
             ]);
             
             // Sélectionner les comptes email selon l'audience

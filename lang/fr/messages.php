@@ -10,6 +10,7 @@ return [
         'email_label' => "Votre adresse email",
         'email_placeholder' => 'votre@email.com',
         'email_help' => "Elle nous sert à rattacher le test et à vous permettre de retrouver vos résultats.",
+        'marketing_consent' => "En cochant cette case, vous acceptez de recevoir des emails marketing et des actualités de MailSoar.",
         'audience_type' => 'Type d\'audience',
         'audience_b2c' => 'B2C (Grand public)',
         'audience_b2b' => 'B2B (Professionnel)',

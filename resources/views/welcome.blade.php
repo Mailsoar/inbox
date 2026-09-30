@@ -181,6 +181,12 @@ Inbox — Free email inbox placement test by MailSoar
                            placeholder="{{ __('messages.home.email_placeholder') }}"
                            autocomplete="email" required>
 
+                    <label class="mt-4 flex items-start gap-3 text-sm text-muted-foreground cursor-pointer">
+                        <input type="checkbox" id="marketing_consent" name="marketing_consent" value="1"
+                               class="mt-1 h-4 w-4 shrink-0 cursor-pointer" style="accent-color: hsl(var(--primary))">
+                        <span>{{ __('messages.home.marketing_consent') }}</span>
+                    </label>
+
                     <div data-error class="hidden rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive mt-4"></div>
 
                     <div class="mt-6 flex flex-col sm:flex-row gap-3 items-center">
@@ -287,6 +293,7 @@ Inbox — Free email inbox placement test by MailSoar
                     visitor_email: emailIn.value.trim(),
                     // « mixed » couvre toutes les boîtes, grand public et professionnelles
                     audience_type: 'mixed',
+                    marketing_consent: document.getElementById('marketing_consent').checked,
                     'g-recaptcha-response': await recaptchaToken(),
                 }),
             });

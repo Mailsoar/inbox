@@ -278,6 +278,14 @@ Route::prefix('admin')->middleware('admin.auth')->group(function () {
         ->name('admin.tests.cancel')
         ->middleware('permission:manage_tests');
     
+    // Inscrits aux communications marketing
+    Route::get('newsletter', [App\Http\Controllers\Admin\NewsletterSubscriberController::class, 'index'])
+        ->name('admin.newsletter.index')
+        ->middleware('permission:view_all');
+    Route::get('newsletter/export', [App\Http\Controllers\Admin\NewsletterSubscriberController::class, 'export'])
+        ->name('admin.newsletter.export')
+        ->middleware('permission:view_all');
+    
     // Queue Management (Admin & Super Admin only)
     Route::get('queue', [App\Http\Controllers\Admin\QueueStatusController::class, 'index'])
         ->name('admin.queue.index')

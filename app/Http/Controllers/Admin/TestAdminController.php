@@ -94,6 +94,8 @@ class TestAdminController extends Controller
                 'unique_id' => $test->unique_id,
                 'visitor_email' => $test->visitor_email,
                 'audience_type' => $test->audience_type,
+                'marketing_consent' => $test->marketing_consent,
+                'marketing_consent_at' => $test->marketing_consent_at,
                 'status' => $test->status,
                 'created_at' => $test->created_at,
                 'total_accounts' => $totalAccounts,
@@ -238,7 +240,6 @@ class TestAdminController extends Controller
                 'visitor_email',
                 DB::raw('count(*) as test_count'),
                 DB::raw('MAX(created_at) as last_test'),
-                DB::raw("STRING_AGG(DISTINCT audience_type, ',') as audience_types"),
                 DB::raw('AVG(received_emails) as avg_received'),
                 DB::raw("SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_tests")
             )
@@ -281,7 +282,6 @@ class TestAdminController extends Controller
                     'email' => $visitor->visitor_email,
                     'test_count' => $visitor->test_count,
                     'last_test' => $visitor->last_test,
-                    'audience_types' => explode(',', $visitor->audience_types),
                     'spam_rate' => $spamRate,
                     'auth_score' => $authScore,
                     'has_issues' => $spamRate > 30 || ($authScore !== null && $authScore < 70),
