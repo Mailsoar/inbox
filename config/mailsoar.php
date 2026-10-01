@@ -29,6 +29,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Alerte Slack sur fort taux de spam
+    |--------------------------------------------------------------------------
+    | À la fin d'un test, si la part des emails reçus classés en spam atteint
+    | le seuil, un message part dans le canal de suivi commercial.
+    */
+    'spam_alert' => [
+        'enabled' => env('SPAM_ALERT_ENABLED', true),
+        // En pourcentage des emails reçus ; l'alerte part à partir de ce seuil.
+        'threshold' => env('SPAM_ALERT_THRESHOLD', 25),
+        // En dessous, le taux n'est pas représentatif (1 spam sur 2 = 50 %).
+        'min_received' => env('SPAM_ALERT_MIN_RECEIVED', 4),
+        // Un nouveau test du même domaine dans ce délai répond dans le fil existant.
+        'thread_days' => env('SPAM_ALERT_THREAD_DAYS', 7),
+        // Domaines jamais signalés (tests internes), séparés par des virgules.
+        'excluded_domains' => env('SPAM_ALERT_EXCLUDED_DOMAINS', 'mailsoar.com'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Email Providers
     |--------------------------------------------------------------------------
     */

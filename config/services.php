@@ -31,6 +31,12 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Bot Slack du canal de suivi des leads (#internal-leads-inbox)
+    'slack_feedback' => [
+        'bot_token' => env('FEEDBACK_SLACK_BOT_TOKEN'),
+        'channel_id' => env('FEEDBACK_SLACK_CHANNEL_ID'),
+    ],
+
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),

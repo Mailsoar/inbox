@@ -41,6 +41,7 @@ class Test extends Model
         'domain_analyzed_at' => 'datetime',
         'marketing_consent' => 'boolean',
         'marketing_consent_at' => 'datetime',
+        'spam_alert_sent_at' => 'datetime',
     ];
 
     protected static function boot()

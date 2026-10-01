@@ -33,6 +33,9 @@ class AppServiceProvider extends ServiceProvider
             }
         }
 
+        // Alerte Slack quand un test terminé place trop d'emails en spam
+        \App\Models\Test::observe(\App\Observers\TestObserver::class);
+
         // Use Bootstrap 5 for pagination
         Paginator::useBootstrapFive();
 

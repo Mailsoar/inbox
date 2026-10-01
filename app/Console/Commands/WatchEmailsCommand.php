@@ -45,9 +45,10 @@ class WatchEmailsCommand extends Command
 
     /**
      * Files traitées par la boucle : le relevé des boîtes, et le diagnostic du
-     * domaine d'envoi déclenché au premier email reçu.
+     * domaine d'envoi déclenché au premier email reçu, et les alertes Slack
+     * de fin de test.
      */
-    private const QUEUES = ['email-addresses', 'domain-analysis'];
+    private const QUEUES = ['email-addresses', 'domain-analysis', 'alerts'];
 
     private bool $shouldStop = false;
 
