@@ -14,8 +14,10 @@ use Throwable;
  */
 class SpamAlertService
 {
-    public function __construct(private ComplianceScoreService $compliance)
-    {
+    public function __construct(
+        private ComplianceScoreService $compliance,
+        private HubSpotLeadService $hubspot,
+    ) {
     }
 
     /**
@@ -69,9 +71,12 @@ class SpamAlertService
             }
         }
 
+        $analysis = $this->compliance->analyze($test);
+        $crm = $force ? null : $this->syncHubSpot($test, $rate, $analysis);
+
         try {
             $thread = $force ? null : $this->openThreadFor($test);
-            $ts = $this->post($this->message($test, $spam, $received, $rate, (bool) $thread), $thread);
+            $ts = $this->post($this->message($test, $analysis, $spam, $received, $rate, (bool) $thread, $crm), $thread);
         } catch (Throwable $e) {
             // Rend la main pour que la nouvelle tentative du job puisse réessayer.
             if (! $force) {
@@ -96,6 +101,46 @@ class SpamAlertService
         ]);
 
         return $thread ? 'sent_in_thread' : 'sent';
+    }
+
+    /**
+     * Crée ou met à jour le lead HubSpot, une seule fois par test même si
+     * l'envoi Slack est retenté. Un échec HubSpot n'empêche pas l'alerte :
+     * il est signalé dans le message pour une saisie manuelle.
+     *
+     * @return array{id:string, owner:?string, created:?bool}|false|null
+     *         Contact synchronisé, false en cas d'échec, null si HubSpot
+     *         n'est pas configuré
+     */
+    private function syncHubSpot(Test $test, float $rate, array $analysis): array|false|null
+    {
+        // Déjà synchronisé lors d'une tentative précédente du job.
+        if ($test->hubspot_contact_id) {
+            return ['id' => $test->hubspot_contact_id, 'owner' => null, 'created' => null];
+        }
+
+        if (! $this->hubspot->isConfigured()) {
+            return null;
+        }
+
+        try {
+            $contact = $this->hubspot->syncSpamLead($test, [
+                'spam_rate' => (int) round($rate),
+                'score' => $analysis['score'],
+            ]);
+        } catch (Throwable $e) {
+            Log::error('[SpamAlert] Synchronisation HubSpot en échec', [
+                'test_id' => $test->unique_id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+
+        Test::whereKey($test->id)->update(['hubspot_contact_id' => $contact['id']]);
+        $test->hubspot_contact_id = $contact['id'];
+
+        return $contact;
     }
 
     /** Domaine qui identifie le prospect : celui d'envoi, à défaut celui du visiteur. */
@@ -161,9 +206,12 @@ class SpamAlertService
         return (string) $response->json('ts');
     }
 
-    private function message(Test $test, int $spam, int $received, float $rate, bool $isFollowUp): array
+    /**
+     * Message Slack, en anglais : le canal est partagé avec l'équipe
+     * commerciale anglophone.
+     */
+    private function message(Test $test, array $analysis, int $spam, int $received, float $rate, bool $isFollowUp, array|false|null $crm): array
     {
-        $analysis = $this->compliance->analyze($test);
         $domain = $this->domainOf($test);
         $total = $test->emailAccounts->count();
         $inbox = $test->results->whereIn('placement', Test::getInboxPlacements())->count();
@@ -172,11 +220,11 @@ class SpamAlertService
         $pct = (int) round($rate);
 
         $title = $isFollowUp
-            ? "Nouveau test : {$pct} % en spam"
-            : "🚨 {$pct} % en spam — {$domain}";
+            ? "New test: {$pct}% in spam"
+            : "🚨 {$pct}% in spam — {$domain}";
 
-        $placement = "*{$spam} spam* / {$received} reçus (sur {$total} boîtes)\n"
-            . "{$inbox} inbox · {$other} autres onglets · {$missing} jamais arrivés";
+        $placement = "*{$spam} spam* / {$received} received (out of {$total} inboxes)\n"
+            . "{$inbox} inbox · {$other} other tabs · {$missing} never arrived";
 
         $score = $analysis['score'] !== null
             ? "{$analysis['score']}/100 ({$analysis['grade']})"
@@ -188,7 +236,7 @@ class SpamAlertService
             ->implode('  ');
 
         if (($test->domain_analysis['dmarc']['policy'] ?? null) === 'none') {
-            $auth .= "\nDMARC en p=none";
+            $auth .= "\nDMARC policy is p=none";
         }
 
         $providers = collect($analysis['providers'])
@@ -198,37 +246,54 @@ class SpamAlertService
                 $parts = array_filter([
                     $p['spam'] ? "*{$p['spam']} spam*" : null,
                     $p['inbox'] ? "{$p['inbox']} inbox" : null,
-                    $p['other'] ? "{$p['other']} autres" : null,
-                    $missing ? "{$missing} manquant" . ($missing > 1 ? 's' : '') : null,
+                    $p['other'] ? "{$p['other']} other" : null,
+                    $missing ? "{$missing} missing" : null,
                 ]);
 
-                return "• {$label} : " . implode(' · ', $parts) . " / {$p['total']}";
+                return "• {$label}: " . implode(' · ', $parts) . " / {$p['total']}";
             })
             ->take(20)
             ->implode("\n");
 
-        $status = ['completed' => 'terminé', 'timeout' => 'terminé (délai écoulé)', 'cancelled' => 'annulé'][$test->status] ?? $test->status;
+        $status = ['completed' => 'completed', 'timeout' => 'completed (timed out)', 'cancelled' => 'cancelled'][$test->status] ?? $test->status;
+        $language = $test->language === 'fr' ? 'French' : 'English';
+
+        $crmNote = match (true) {
+            $crm === false => '⚠️ HubSpot sync failed: add the lead manually',
+            ! is_array($crm) => null,
+            $crm['created'] === true => 'HubSpot: new lead assigned to ' . ($crm['owner'] ?? 'its owner'),
+            $crm['owner'] !== null => "HubSpot: existing contact, owned by {$crm['owner']}",
+            default => 'HubSpot: existing contact updated',
+        };
+
+        $buttons = [
+            ['type' => 'button', 'text' => ['type' => 'plain_text', 'text' => 'Open in admin'], 'url' => route('admin.tests.show', $test), 'style' => 'primary'],
+            ['type' => 'button', 'text' => ['type' => 'plain_text', 'text' => 'Visitor report'], 'url' => route('test.results', ['unique_id' => $test->unique_id])],
+        ];
+
+        if (is_array($crm)) {
+            $buttons[] = ['type' => 'button', 'text' => ['type' => 'plain_text', 'text' => 'HubSpot contact'], 'url' => $this->hubspot->contactUrl($crm['id'])];
+        }
 
         return [
-            'text' => "{$pct} % en spam pour {$domain} ({$test->visitor_email})",
+            'text' => "{$pct}% in spam for {$domain} ({$test->visitor_email})",
             'blocks' => [
                 ['type' => 'header', 'text' => ['type' => 'plain_text', 'text' => mb_substr($title, 0, 150)]],
                 ['type' => 'section', 'fields' => [
                     ['type' => 'mrkdwn', 'text' => "*Email*\n" . $this->escape($test->visitor_email)],
-                    ['type' => 'mrkdwn', 'text' => "*Domaine d'envoi*\n" . $this->escape($test->sending_domain ?: '—')],
+                    ['type' => 'mrkdwn', 'text' => "*Sending domain*\n" . $this->escape($test->sending_domain ?: '—')],
                     ['type' => 'mrkdwn', 'text' => "*Placement*\n{$placement}"],
                     ['type' => 'mrkdwn', 'text' => "*Score*\n{$score}"],
-                    ['type' => 'mrkdwn', 'text' => "*Authentification*\n{$auth}"],
-                    ['type' => 'mrkdwn', 'text' => "*Opt-in marketing*\n" . ($test->marketing_consent ? 'Oui' : 'Non')],
+                    ['type' => 'mrkdwn', 'text' => "*Authentication*\n{$auth}"],
+                    ['type' => 'mrkdwn', 'text' => "*Agreed to be contacted*\n" . ($test->marketing_consent ? 'Yes' : 'No')],
+                    ['type' => 'mrkdwn', 'text' => "*Language*\n{$language}"],
                 ]],
-                ['type' => 'section', 'text' => ['type' => 'mrkdwn', 'text' => "*Par fournisseur*\n" . ($providers ?: '—')]],
+                ['type' => 'section', 'text' => ['type' => 'mrkdwn', 'text' => "*By provider*\n" . ($providers ?: '—')]],
                 ['type' => 'context', 'elements' => [
-                    ['type' => 'mrkdwn', 'text' => "Test {$test->unique_id} · {$status} · lancé " . $test->created_at->locale('fr')->diffForHumans()],
+                    ['type' => 'mrkdwn', 'text' => "Test {$test->unique_id} · {$status} · started " . $test->created_at->locale('en')->diffForHumans()
+                        . ($crmNote ? " · {$crmNote}" : '')],
                 ]],
-                ['type' => 'actions', 'elements' => [
-                    ['type' => 'button', 'text' => ['type' => 'plain_text', 'text' => "Voir dans l'admin"], 'url' => route('admin.tests.show', $test), 'style' => 'primary'],
-                    ['type' => 'button', 'text' => ['type' => 'plain_text', 'text' => 'Rapport du visiteur'], 'url' => route('test.results', ['unique_id' => $test->unique_id])],
-                ]],
+                ['type' => 'actions', 'elements' => $buttons],
             ],
         ];
     }

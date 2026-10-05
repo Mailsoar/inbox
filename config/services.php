@@ -37,6 +37,19 @@ return [
         'channel_id' => env('FEEDBACK_SLACK_CHANNEL_ID'),
     ],
 
+    // Application privée HubSpot : création des leads lors des alertes spam
+    'hubspot' => [
+        'access_token' => env('HUBSPOT_ACCESS_TOKEN'),
+        'portal_id' => env('HUBSPOT_PORTAL_ID', '24884708'),
+        'ui_domain' => env('HUBSPOT_UI_DOMAIN', 'app-eu1.hubspot.com'),
+        // Propriétaire des nouveaux leads selon la langue du test ; toute
+        // langue autre que le français part chez Larry.
+        'lead_owners' => [
+            'en' => ['id' => env('HUBSPOT_LEAD_OWNER_EN', '34698354'), 'name' => 'Larry'],
+            'fr' => ['id' => env('HUBSPOT_LEAD_OWNER_FR', '189883892'), 'name' => 'Pierre'],
+        ],
+    ],
+
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
