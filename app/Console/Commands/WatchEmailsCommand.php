@@ -85,6 +85,19 @@ class WatchEmailsCommand extends Command
             $youngest = $this->youngestActiveTestAge();
 
             if ($youngest === null) {
+                // Plus aucun test actif, mais la clôture du dernier a pu créer
+                // des jobs (alerte de fin de test) : ils partent sans attendre
+                // le prochain test.
+                try {
+                    $pending = $this->pendingJobs();
+
+                    if ($pending > 0) {
+                        $this->drainQueue($pending);
+                    }
+                } catch (\Throwable $e) {
+                    Log::error('[EmailWatch] Idle drain failed', ['error' => $e->getMessage()]);
+                }
+
                 $this->sleepInterruptible($idleSleep);
                 continue;
             }
@@ -136,10 +149,7 @@ class WatchEmailsCommand extends Command
             // On vide la file dès qu'elle contient du travail prêt, et pas
             // seulement après un dispatch : le service déduplique, donc un
             // job déjà en attente ne serait jamais traité autrement.
-            $pending = \DB::table('jobs')
-                ->whereIn('queue', self::QUEUES)
-                ->where('available_at', '<=', now()->timestamp)
-                ->count();
+            $pending = $this->pendingJobs();
 
             $workers = 0;
             $elapsed = 0;
@@ -168,6 +178,15 @@ class WatchEmailsCommand extends Command
             ]);
             $this->sleepInterruptible(5);
         }
+    }
+
+    /** Jobs prêts à être traités dans les files du démon. */
+    private function pendingJobs(): int
+    {
+        return \DB::table('jobs')
+            ->whereIn('queue', self::QUEUES)
+            ->where('available_at', '<=', now()->timestamp)
+            ->count();
     }
 
     /**
