@@ -38,8 +38,6 @@ return [
         'enabled' => env('SPAM_ALERT_ENABLED', true),
         // En pourcentage des emails reçus ; l'alerte part à partir de ce seuil.
         'threshold' => env('SPAM_ALERT_THRESHOLD', 25),
-        // En dessous, le taux n'est pas représentatif (1 spam sur 2 = 50 %).
-        'min_received' => env('SPAM_ALERT_MIN_RECEIVED', 4),
         // Un nouveau test du même domaine dans ce délai répond dans le fil existant.
         'thread_days' => env('SPAM_ALERT_THREAD_DAYS', 7),
         // Domaines jamais signalés (tests internes), séparés par des virgules.

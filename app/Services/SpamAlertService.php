@@ -52,10 +52,6 @@ class SpamAlertService
         $rate = $received > 0 ? $spam / $received * 100 : 0.0;
 
         if (! $force) {
-            if ($received < (int) config('mailsoar.spam_alert.min_received')) {
-                return 'not_enough_results';
-            }
-
             if ($rate < (float) config('mailsoar.spam_alert.threshold')) {
                 return 'below_threshold';
             }
