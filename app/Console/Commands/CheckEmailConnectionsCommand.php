@@ -8,6 +8,7 @@ use App\Services\LoggerService;
 use App\Services\OAuthTokenService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ConnectionErrorAlert;
 use Carbon\Carbon;
@@ -60,6 +61,8 @@ class CheckEmailConnectionsCommand extends Command
                 $successCount++;
                 $this->info("✓ Connection successful for: {$account->email}");
                 $this->logger->info("Connection successful", ['email' => $account->email]);
+
+                $this->recordSuccess($account);
                 
             } catch (\Exception $e) {
                 // Connection failed
@@ -77,6 +80,9 @@ class CheckEmailConnectionsCommand extends Command
                         $this->info("  ✅ Connection repaired successfully!");
                         $this->logger->info("Connection repaired", ['email' => $account->email]);
                         $successCount++;
+
+                        $this->recordSuccess($account);
+
                         continue; // Skip the rest, account is now working
                     } else {
                         // Le motif réel (ex. identifiants d'application absents)
@@ -89,6 +95,16 @@ class CheckEmailConnectionsCommand extends Command
                     }
                 }
                 
+                // Le service Gmail ne remonte que « Unknown connection error » :
+                // le refus de Google (ex. token révoqué) dit quoi faire.
+                if ($account->provider === 'gmail' && $account->auth_type === 'oauth') {
+                    $oauthService = new OAuthTokenService();
+
+                    if (!$oauthService->refreshGmailToken($account) && $oauthService->lastError) {
+                        $errorMessage = $oauthService->lastError;
+                    }
+                }
+
                 $this->logger->error("Connection failed", [
                     'email' => $account->email,
                     'error' => $errorMessage,
@@ -119,6 +135,8 @@ class CheckEmailConnectionsCommand extends Command
                     'account' => $account,
                     'error' => $errorMessage
                 ];
+
+                $this->recordFailure($account, $errorMessage);
             }
         }
         
@@ -144,6 +162,94 @@ class CheckEmailConnectionsCommand extends Command
     }
     
     
+    /**
+     * Alerte Slack après deux échecs consécutifs (une erreur passagère du
+     * fournisseur ne dérange personne), puis au plus une fois par 24 h tant
+     * que la boîte reste déconnectée.
+     */
+    private function recordFailure(EmailAccount $account, string $error): void
+    {
+        $failures = Cache::get("connection-failures:{$account->id}", 0) + 1;
+        Cache::forever("connection-failures:{$account->id}", $failures);
+
+        if ($failures < 2 || !Cache::add("connection-alert:cooldown:{$account->id}", true, now()->addDay())) {
+            return;
+        }
+
+        $sent = $this->notifySlack(
+            ":warning: Mailbox disconnected: {$account->email} (" . $this->providerName($account) . ")\n"
+            . 'Reason: ' . $this->escapeSlack(substr($error, 0, 300)) . "\n"
+            . '<' . route('admin.email-accounts.edit', $account) . '|Reconnect it in the admin>'
+        );
+
+        if ($sent) {
+            Cache::forever("connection-alert:down:{$account->id}", true);
+        } else {
+            // Message perdu : on retentera à la prochaine vérification.
+            Cache::forget("connection-alert:cooldown:{$account->id}");
+        }
+    }
+
+    /**
+     * Remet le compteur à zéro et annonce le retour si la panne avait été
+     * signalée. La pause de 24 h court toujours : une boîte instable
+     * n'alerte pas plus d'une fois par jour.
+     */
+    private function recordSuccess(EmailAccount $account): void
+    {
+        Cache::forget("connection-failures:{$account->id}");
+
+        if (Cache::pull("connection-alert:down:{$account->id}")) {
+            $this->notifySlack(":white_check_mark: Mailbox back online: {$account->email} (" . $this->providerName($account) . ')');
+        }
+    }
+
+    private function providerName(EmailAccount $account): string
+    {
+        return ['gmail' => 'Gmail', 'outlook' => 'Outlook'][$account->provider] ?? ucfirst((string) $account->provider);
+    }
+
+    /** Échappement imposé par Slack pour le texte mrkdwn. */
+    private function escapeSlack(string $text): string
+    {
+        return str_replace(['&', '<', '>'], ['&amp;', '&lt;', '&gt;'], $text);
+    }
+
+    /**
+     * Publie dans le canal technique, au format des autres outils
+     * (« [AEDA] … »). Un échec Slack ne doit pas interrompre la vérification.
+     */
+    private function notifySlack(string $text): bool
+    {
+        $token = config('services.slack_feedback.bot_token');
+        $channel = config('services.slack_feedback.alerts_channel_id');
+
+        if (!$token || !$channel) {
+            $this->logger->warning('Slack alert skipped: bot token or alerts channel not configured');
+            return false;
+        }
+
+        try {
+            $response = Http::withToken($token)
+                ->timeout(10)
+                ->post('https://slack.com/api/chat.postMessage', [
+                    'channel' => $channel,
+                    'text' => '[Inbox] ' . $text,
+                    'unfurl_links' => false,
+                ]);
+
+            if ($response->json('ok')) {
+                return true;
+            }
+
+            $this->logger->error('Slack alert failed', ['error' => $response->json('error', 'HTTP ' . $response->status())]);
+        } catch (\Throwable $e) {
+            $this->logger->error('Slack alert failed', ['error' => $e->getMessage()]);
+        }
+
+        return false;
+    }
+
     private function sendAlertEmail($failedAccounts)
     {
         $this->logger->info("Sending alert email for failed accounts", [

@@ -35,6 +35,8 @@ return [
     'slack_feedback' => [
         'bot_token' => env('FEEDBACK_SLACK_BOT_TOKEN'),
         'channel_id' => env('FEEDBACK_SLACK_CHANNEL_ID'),
+        // Canal technique (#development) : boîtes de test déconnectées
+        'alerts_channel_id' => env('SLACK_ALERTS_CHANNEL_ID', 'C0A3W5GAECE'),
     ],
 
     // Application privée HubSpot : création des leads lors des alertes spam
