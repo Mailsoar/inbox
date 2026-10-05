@@ -77,6 +77,10 @@
             border-bottom: 1px solid #e2e8f0;
         }
 
+        .admin-main {
+            min-width: 0;
+        }
+
         .admin-content {
             padding: 24px;
         }
@@ -327,7 +331,7 @@
             </div>
 
             <!-- Main Content -->
-            <div class="col">
+            <div class="col admin-main">
                 <!-- Header -->
                 <header class="admin-header">
                     <div class="d-flex justify-content-between align-items-center p-3">
