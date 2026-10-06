@@ -24,7 +24,8 @@ class HubSpotLeadService
     private const READ = [
         'source', 'lead_source__drilldown_contact_level', 'hubspot_owner_id',
         'lifecyclestage', 'hs_lead_status', 'hs_legal_basis',
-        'mailsoar_marketing_consent', 'mailsoar_test_alert_count', 'hs_language',
+        'mailsoar_marketing_consent', 'mailsoar_marketing_consent_at',
+        'mailsoar_test_alert_count', 'hs_language',
     ];
 
     public function isConfigured(): bool
@@ -124,9 +125,20 @@ class HubSpotLeadService
             $properties['lifecyclestage'] = 'lead';
         }
 
+        // Deux statuts distincts : le suivi des résultats (intérêt légitime)
+        // vaut pour tout testeur, le marketing seulement pour qui a coché.
+        $properties['mailsoar_test_user'] = 'true';
+
         // Le consentement ne se retire pas : « non » ne remplace jamais « oui ».
         if ($test->marketing_consent) {
             $properties['mailsoar_marketing_consent'] = 'true';
+
+            // Preuve du premier consentement : date, source et libellé exact.
+            if (empty($current['mailsoar_marketing_consent_at'])) {
+                $properties['mailsoar_marketing_consent_at'] = ($test->marketing_consent_at ?? $test->created_at)->getTimestampMs();
+                $properties['mailsoar_marketing_consent_source'] = 'MailSoar Inbox Tester (inbox.mailsoar.com)';
+                $properties['mailsoar_marketing_consent_text'] = __('messages.home.marketing_consent', [], $this->languageOf($test));
+            }
 
             if (in_array($current['hs_legal_basis'] ?? '', ['', self::LEGITIMATE_INTEREST], true)) {
                 $properties['hs_legal_basis'] = self::CONSENT;

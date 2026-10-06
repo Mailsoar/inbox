@@ -167,13 +167,12 @@ Inbox — Free email inbox placement test by MailSoar
 
             {{-- ÉTAPE 3 — Email, qui débloque le lancement --}}
             <div class="border-t border-border mt-6 pt-6">
-                <h2 class="font-semibold text-lg mb-1 flex items-center gap-2">
+                <h2 class="font-semibold text-lg mb-4 flex items-center gap-2">
                     <svg class="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l9 6 9-6M3 8v8a2 2 0 002 2h14a2 2 0 002-2V8M3 8l9-5 9 5"/>
                     </svg>
                     {{ __('messages.test.step_three') }} — {{ __('messages.home.email_label') }}
                 </h2>
-                <p class="text-sm text-muted-foreground mb-4">{{ __('messages.home.email_help') }}</p>
 
                 <form id="test-form" novalidate>
                     @csrf
@@ -181,6 +180,16 @@ Inbox — Free email inbox placement test by MailSoar
                            placeholder="{{ __('messages.home.email_placeholder') }}"
                            autocomplete="email" required>
 
+                    <p class="mt-3 text-xs text-muted-foreground">
+                        {{ __('messages.home.email_notice') }}
+                        <a href="{{ __('messages.home.privacy_policy_url') }}" target="_blank" rel="noopener"
+                           class="underline hover:text-foreground">{{ __('messages.home.privacy_policy') }}</a>
+                        ·
+                        <a href="{{ __('messages.home.legal_notice_url') }}" target="_blank" rel="noopener"
+                           class="underline hover:text-foreground">{{ __('messages.home.legal_notice') }}</a>
+                    </p>
+
+                    {{-- Facultative et décochée : le test ne dépend jamais du consentement marketing. --}}
                     <label class="mt-4 flex items-start gap-3 text-sm text-muted-foreground cursor-pointer">
                         <input type="checkbox" id="marketing_consent" name="marketing_consent" value="1"
                                class="mt-1 h-4 w-4 shrink-0 cursor-pointer" style="accent-color: hsl(var(--primary))">

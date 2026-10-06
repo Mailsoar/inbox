@@ -10,7 +10,14 @@ return [
     'email_label' => "Your email address",
     'email_placeholder' => 'your@email.com',
     'email_help' => "We'll use it to link the test to you and let you find your results later.",
-    'marketing_consent' => "By checking this box, you agree to receive marketing emails and updates from MailSoar.",
+    // Notice d'information (sans case) : le suivi des résultats repose sur
+    // l'intérêt légitime, seul le marketing demande un consentement.
+    'email_notice' => "We'll use your email to link the test to you and give you access to your results. The MailSoar team may also reach out to help you understand them. You can opt out anytime.",
+    'privacy_policy' => "Privacy policy",
+    'privacy_policy_url' => "https://www.mailsoar.com/privacy-policy/",
+    'legal_notice' => "Legal notice",
+    'legal_notice_url' => "https://www.mailsoar.com/legal-notice/",
+    'marketing_consent' => "Send me deliverability tips and other marketing emails from MailSoar. Unsubscribe anytime.",
     'audience_type' => 'Audience type',
     'audience_b2c' => 'B2C (Consumer)',
     'audience_b2b' => 'B2B (Business)',

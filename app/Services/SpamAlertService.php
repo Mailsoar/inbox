@@ -281,7 +281,7 @@ class SpamAlertService
                     ['type' => 'mrkdwn', 'text' => "*Placement*\n{$placement}"],
                     ['type' => 'mrkdwn', 'text' => "*Score*\n{$score}"],
                     ['type' => 'mrkdwn', 'text' => "*Authentication*\n{$auth}"],
-                    ['type' => 'mrkdwn', 'text' => "*Agreed to be contacted*\n" . ($test->marketing_consent ? 'Yes' : 'No')],
+                    ['type' => 'mrkdwn', 'text' => "*Marketing consent*\n" . ($test->marketing_consent ? 'Yes' : 'No')],
                     ['type' => 'mrkdwn', 'text' => "*Language*\n{$language}"],
                 ]],
                 ['type' => 'section', 'text' => ['type' => 'mrkdwn', 'text' => "*By provider*\n" . ($providers ?: '—')]],
