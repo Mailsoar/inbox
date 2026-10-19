@@ -1,0 +1,98 @@
+/* ==========================================================================
+   En-tête et pied de page de www.mailsoar.com.
+   Repris de layout.css du starter, limité aux classes .ms-* pour ne pas
+   entrer en conflit avec le build Tailwind de la page.
+   ========================================================================== */
+
+:root {
+  --ms-black: #000;
+  --ms-white: #fff;
+  --ms-cream: #f9f5e9;
+  --ms-cream-dark: #e8e3d4;
+  --ms-green: #5fe3b4;
+  --ms-green-hover: #35c38f;
+  --ms-container: 1440px;
+  --ms-gutter: 20px;
+}
+
+.ms-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--ms-cream);
+  border-bottom: 1px solid var(--ms-cream-dark);
+}
+.ms-header__inner {
+  max-width: var(--ms-container);
+  margin: 0 auto;
+  padding: 0 var(--ms-gutter);
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.ms-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; color: #000; }
+.ms-logo img { height: 28px; width: auto; display: block; }
+.ms-header__actions { display: flex; align-items: center; gap: 12px; }
+
+/* Bouton de l'en-tête : règles de mailsoar.com pour .wp-block-button__link (Astra)
+   et le bloc Spectra uagb-block-21eec21d, limitées à .ms-header. Le site a une
+   base de 18px : les tailles relatives sont converties en px. */
+.ms-header .uagb-buttons-repeater.wp-block-button__link {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 0;
+  background-color: #000;
+  color: #fff;
+  font-family: inherit;
+  font-weight: 700;
+  line-height: 1em;
+  font-size: 16.2px;                 /* .9em de 18px */
+  border-radius: 30px;
+  padding: 16px 20px;
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0.15);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s linear;
+}
+.ms-header .uagb-buttons-repeater.wp-block-button__link:hover,
+.ms-header .uagb-buttons-repeater.wp-block-button__link:focus {
+  color: #000;
+  background-color: var(--ms-cream-dark);
+}
+.ms-header .uagb-buttons-repeater .uagb-button__link { font-size: 0.9em; text-decoration: none; }
+.ms-header .uagb-buttons-repeater .uagb-button__icon { display: flex; align-items: center; font-size: inherit; }
+.ms-header .uagb-buttons-repeater .uagb-button__icon-position-after { margin-left: 8px; }
+.ms-header .uagb-buttons-repeater .uagb-button__icon > svg { width: 15px; height: 15px; fill: currentColor; }
+
+/* Sélecteur de langue : "EN | FR" comme le bloc WPML du site */
+.ms-lang { display: flex; align-items: center; margin-left: 6px; font-weight: 600; font-size: 0.9rem; color: #000; text-transform: uppercase; }
+.ms-lang__current { font-weight: 700; }
+.ms-lang a { opacity: 0.55; transition: opacity 0.15s ease; }
+.ms-lang a:hover { opacity: 1; }
+.ms-lang a::before { content: "|"; margin: 0 0.45em; opacity: 0.35; display: inline-block; }
+
+.ms-footer {
+  margin-top: 4rem;
+  border-top: 1px solid var(--ms-cream-dark);
+  padding: 32px var(--ms-gutter);
+  font-size: 0.9rem;
+  color: #362e27;
+}
+.ms-footer__inner {
+  max-width: var(--ms-container);
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.ms-footer a:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+@media (max-width: 520px) {
+  .ms-header__inner { min-height: 64px; gap: 12px; }
+  .ms-header .uagb-buttons-repeater.wp-block-button__link { padding: 12px 16px; font-size: 14px; }
+}

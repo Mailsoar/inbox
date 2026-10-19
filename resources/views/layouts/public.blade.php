@@ -27,6 +27,11 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    {{-- Design de www.mailsoar.com : surcharge du build Tailwind, puis en-tête et pied de page du site --}}
+    <link rel="stylesheet" href="/css/mailsoar/inbox-tailwind-override.css?v={{ filemtime(public_path('css/mailsoar/inbox-tailwind-override.css')) }}">
+    <link rel="stylesheet" href="/css/mailsoar/inbox-site-chrome.css?v={{ filemtime(public_path('css/mailsoar/inbox-site-chrome.css')) }}">
+
     @stack('head')
 </head>
 <body class="min-h-screen bg-mesh">
@@ -43,18 +48,39 @@
         $enUrl = '?' . http_build_query($langParams);
     @endphp
 
-    <header class="border-b border-border/60 bg-card/70 backdrop-blur sticky top-0 z-40">
-        <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-            <a href="{{ route('home') }}" class="flex items-center gap-2 font-heading font-bold text-lg tracking-tight">
-                @include('partials.logo', ['class' => 'h-7 w-auto'])
+    <header class="ms-header">
+        <div class="ms-header__inner">
+            <a class="ms-logo" href="{{ route('home') }}">
+                @include('partials.logo', ['class' => ''])
                 <span class="hidden sm:inline">Inbox</span>
             </a>
-
-            <div class="flex items-center gap-2">
-                <div class="inline-flex rounded-md border border-border overflow-hidden text-xs font-medium">
-                    <a href="{{ $frUrl }}" class="px-2.5 py-1.5 {{ app()->getLocale() === 'fr' ? 'bg-accent text-accent-foreground' : 'bg-card hover:bg-muted' }}">FR</a>
-                    <a href="{{ $enUrl }}" class="px-2.5 py-1.5 {{ app()->getLocale() === 'en' ? 'bg-accent text-accent-foreground' : 'bg-card hover:bg-muted' }}">EN</a>
+            @php
+                $fr = app()->getLocale() === 'fr';
+            @endphp
+            <div class="ms-header__actions">
+                {{-- Bouton d'en-tête de mailsoar.com : même balisage Spectra (uagb) et mêmes classes --}}
+                <div class="wp-block-button">
+                    <div class="uagb-button__wrapper">
+                        <a class="uagb-buttons-repeater wp-block-button__link"
+                           href="{{ $fr ? 'https://www.mailsoar.com/fr/contact/' : 'https://meetings-eu1.hubspot.com/lawrence-heslin/site' }}"
+                           rel="noopener" target="_blank" role="button">
+                            <div class="uagb-button__link">{{ $fr ? 'Être recontacté' : 'Talk to an expert' }}</div>
+                            <span class="uagb-button__icon uagb-button__icon-position-after">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 278.6l-160 160C272.4 444.9 264.2 448 256 448s-16.38-3.125-22.62-9.375c-12.5-12.5-12.5-32.75 0-45.25L338.8 288H32C14.33 288 .0016 273.7 .0016 256S14.33 224 32 224h306.8l-105.4-105.4c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0l160 160C451.1 245.9 451.1 266.1 438.6 278.6z"/></svg>
+                            </span>
+                        </a>
+                    </div>
                 </div>
+                {{-- Sélecteur de langue au format du site : langue courante en gras, puis les autres --}}
+                <nav class="ms-lang" aria-label="Language switcher">
+                    @if($fr)
+                        <span class="ms-lang__current" aria-current="page">FR</span>
+                        <a href="{{ $enUrl }}" aria-label="Switch to English">EN</a>
+                    @else
+                        <span class="ms-lang__current" aria-current="page">EN</span>
+                        <a href="{{ $frUrl }}" aria-label="Passer en français">FR</a>
+                    @endif
+                </nav>
             </div>
         </div>
     </header>
@@ -63,26 +89,14 @@
         @yield('content')
     </main>
 
-    <footer class="mt-16 border-t border-border/60 py-8">
-        <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
-            <p>
-                &copy; {{ date('Y') }} ·
-                {{ __('messages.footer.made_with') }}
-                <svg viewBox="0 0 24 24" aria-label="love" role="img"
-                     style="display: inline-block; width: 14px; height: 14px; vertical-align: -2px; margin: 0 2px; fill: #e11d48">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
-                {{ __('messages.footer.by') }}
-                <a href="https://www.mailsoar.com" class="font-medium hover:text-foreground transition-colors" rel="noopener" target="_blank">MailSoar</a>
+    <footer class="ms-footer">
+        <div class="ms-footer__inner">
+            <p>&copy; {{ date('Y') }} <a href="https://www.mailsoar.com" rel="noopener" target="_blank">MailSoar</a></p>
+            <p class="flex items-center gap-4">
+                <a href="https://www.mailsoar.com/privacy-policy/" rel="noopener" target="_blank">Privacy policy</a>
+                <a href="https://www.mailsoar.com/legal-notice/" rel="noopener" target="_blank">Legal notice</a>
+                <a href="{{ route('admin.dashboard') }}" rel="nofollow">{{ __('messages.general.login') }}</a>
             </p>
-            <div class="flex items-center gap-4">
-                <a href="https://www.mailsoar.com" class="hover:text-foreground transition-colors" rel="noopener" target="_blank">mailsoar.com</a>
-                {{-- Accès à l'administration : présent mais effacé, il n'a rien
-                     à faire dans le parcours d'un visiteur. --}}
-                <a href="{{ route('admin.dashboard') }}"
-                   class="text-xs text-muted-foreground/60 hover:text-foreground transition-colors"
-                   rel="nofollow">{{ __('messages.general.login') }}</a>
-            </div>
         </div>
     </footer>
 

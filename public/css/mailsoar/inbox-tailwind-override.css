@@ -1,0 +1,100 @@
+/* ==========================================================================
+   inbox.mailsoar.com : harmonisation avec le design de www.mailsoar.com
+   À charger APRÈS build/assets/app-*.css (même spécificité, l'ordre décide).
+   La page utilise déjà Figtree, le fond crème et le vert MailSoar. Ce fichier
+   ajuste les écarts restants : couleurs exactes, boutons, champs, en-tête, fond.
+   ========================================================================== */
+
+:root {
+  /* Jetons shadcn (format "H S% L%") alignés sur les valeurs du site */
+  --background: 45 57% 94.5%;          /* #f9f5e9 crème exact du site */
+  --foreground: 0 0% 0%;               /* titres noirs comme sur le site */
+  --card-foreground: 0 0% 0%;
+  --primary: 158 72% 65%;              /* #5fe3b4 vert du CTA */
+  --primary-foreground: 0 0% 0%;       /* texte noir sur le vert, comme le site */
+  --accent: 158 59% 49%;               /* #35c38f vert de survol du site */
+  --muted-foreground: 28 16% 18%;      /* #362e27 texte courant du site */
+  --border: 45 30% 87%;                /* #e8e3d4 */
+  --input: 45 30% 87%;
+  --ring: 158 59% 49%;
+
+  /* Jetons propres au site vitrine */
+  --ms-focus: #046bd2;                 /* focus des champs sur mailsoar.com */
+  --ms-shadow-btn: 3px 18px 40px -10px rgba(0, 0, 0, 0.15);
+  --ms-radius-btn: 8px;               /* .ms-btn de mailsoar.com */
+  --ms-radius-field: 4px;
+}
+
+/* Fond : crème uni comme le site, sans le dégradé "mesh" */
+body { color: #362e27; background-color: #f9f5e9; }
+.bg-mesh { background-image: none; background-color: #f9f5e9; }
+
+/* Titres : Figtree 700, noirs, interligne du site */
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: #000;
+}
+h1 { line-height: 1.3; }
+
+/* En-tête : crème avec filet, sans effet de flou */
+header.sticky {
+  background-color: #f9f5e9;
+  border-bottom: 1px solid #e8e3d4;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Boutons : rayon 8px, gras, 1rem, comme .ms-btn du site */
+.btn,
+.btn-primary,
+.btn-outline,
+.btn-ghost {
+  border-radius: var(--ms-radius-btn);
+  font-size: 1rem;
+  line-height: 1em;
+  font-weight: 700;
+}
+.btn-lg { height: 3.25rem; padding-left: 1.75rem; padding-right: 1.75rem; }
+
+/* Bouton principal : vert, texte noir, léger assombrissement au survol (.ms-btn du site) */
+.btn-primary {
+  background-color: #5fe3b4;
+  color: #000;
+  transition: filter 0.15s ease;
+}
+.btn-primary:hover {
+  background-color: #5fe3b4;
+  filter: brightness(0.94);
+}
+
+/* Bouton secondaire : contour noir, inversion au survol */
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid #000;
+  color: #000;
+}
+.btn-outline:hover {
+  background-color: #000;
+  color: #fff;
+}
+
+/* Champs de formulaire : blanc, bord crème, rayon 4px, focus bleu du site */
+.input {
+  background-color: #fff;
+  border-color: #e8e3d4;
+  border-radius: var(--ms-radius-field);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.input:focus-visible {
+  border-color: var(--ms-focus);
+  --tw-ring-color: transparent;
+  --tw-ring-offset-width: 0px;
+}
+input[type="checkbox"] { accent-color: #35c38f; }
+
+/* Liens : noirs, soulignés seulement dans le texte courant */
+a { color: inherit; transition: 0.2s linear; }
+
+/* Fil rouge visuel : pastille d'étape en vert, texte noir */
+.bg-primary.text-primary-foreground { color: #000; }
