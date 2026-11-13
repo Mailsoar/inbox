@@ -35,7 +35,7 @@ class TestService
                 'received_emails' => 0,
                 'language' => $data['language'] ?? app()->getLocale() ?? 'fr',
                 'timeout_at' => now()->addMinutes(config('mailsoar.email_check_timeout_minutes', 30)),
-                'expires_at' => now()->addDays(7),
+                'expires_at' => now()->addDays(config('mailsoar.test_retention_days', 7)),
                 'marketing_consent' => $consent = (bool) ($data['marketing_consent'] ?? false),
                 'marketing_consent_at' => $consent ? now() : null,
             ]);

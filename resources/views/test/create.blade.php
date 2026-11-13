@@ -265,7 +265,7 @@
                     <div class="text-center">
                         <i class="fas fa-shield-alt text-success mb-2" style="font-size: 2rem;"></i>
                         <h6>Secure</h6>
-                        <p class="small text-muted">Your data is automatically deleted after 7 days</p>
+                        <p class="small text-muted">Your data is automatically deleted after {{ config('mailsoar.test_retention_days') }} days</p>
                     </div>
                 </div>
                 <div class="col-md-4">
